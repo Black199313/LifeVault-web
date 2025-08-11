@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Recovery Phrase - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-scroll me-2"></i>Recovery Phrase</h4>
+                <p class="text-muted mb-0">Enter your 12-word recovery phrase</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Instructions</h6>
+                    <p class="mb-0">Enter the 12-word recovery phrase you saved during account setup. Words should be separated by spaces.</p>
+                </div>
+                
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="recovery_phrase" class="form-label">Recovery Phrase *</label>
+                        <textarea class="form-control font-monospace" id="recovery_phrase" name="recovery_phrase" rows="3" required placeholder="word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12"></textarea>
+                        <div class="form-text">Enter all 12 words in the correct order, separated by spaces</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-unlock me-2"></i>Recover Account
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-2"><small>Try a different recovery method?</small></p>
+                    <a href="{{ url_for('recovery') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Recovery Options
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body bg-warning text-dark text-center">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Lost Your Recovery Phrase?</h6>
+                <p class="mb-0"><small>If you can't find your recovery phrase, try security questions or email recovery instead.</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

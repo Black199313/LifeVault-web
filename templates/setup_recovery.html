@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Recovery - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-shield-alt me-2"></i>Setup Your Recovery System</h4>
+                <p class="text-muted mb-0">Create your 5-key protection system</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Important!</h6>
+                    <p class="mb-0">Please save your recovery phrase securely. This is one of the 5 ways to recover your account if you forget your password.</p>
+                </div>
+                
+                <form method="POST" id="recoveryForm">
+                    <!-- Recovery Phrase Display -->
+                    <div class="card mb-4 bg-primary text-white">
+                        <div class="card-header">
+                            <h5><i class="fas fa-scroll me-2"></i>Your Recovery Phrase</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="recovery-phrase-display p-3 bg-light text-dark rounded">
+                                <div class="row g-2">
+                                    {% set words = recovery_phrase.split(' ') %}
+                                    {% for word in words %}
+                                    <div class="col-md-3 col-6">
+                                        <span class="badge bg-secondary fs-6 w-100">{{ loop.index }}. {{ word }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-light btn-sm" onclick="copyRecoveryPhrase()">
+                                    <i class="fas fa-copy me-1"></i>Copy Phrase
+                                </button>
+                                <small class="ms-3">Write this down and store it safely offline!</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Re-enter Password -->
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Re-enter Your Password *</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text">We need your password to set up the encryption keys</div>
+                    </div>
+                    
+                    <!-- Security Questions -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-question-circle me-2"></i>Security Questions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="question1" class="form-label">Question 1 *</label>
+                                    <select class="form-select" id="question1" name="question1" required>
+                                        <option value="">Choose a question...</option>
+                                        <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+                                        <option value="What city were you born in?">What city were you born in?</option>
+                                        <option value="What was your mother's maiden name?">What was your mother's maiden name?</option>
+                                        <option value="What was the make of your first car?">What was the make of your first car?</option>
+                                        <option value="What elementary school did you attend?">What elementary school did you attend?</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="answer1" class="form-label">Answer 1 *</label>
+                                    <input type="text" class="form-control" id="answer1" name="answer1" required>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="question2" class="form-label">Question 2 *</label>
+                                    <select class="form-select" id="question2" name="question2" required>
+                                        <option value="">Choose a question...</option>
+                                        <option value="What was your favorite food as a child?">What was your favorite food as a child?</option>
+                                        <option value="What was the name of your best friend in high school?">What was the name of your best friend in high school?</option>
+                                        <option value="What street did you grow up on?">What street did you grow up on?</option>
+                                        <option value="What was your favorite book as a child?">What was your favorite book as a child?</option>
+                                        <option value="What was your first job?">What was your first job?</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="answer2" class="form-label">Answer 2 *</label>
+                                    <input type="text" class="form-control" id="answer2" name="answer2" required>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="question3" class="form-label">Question 3 *</label>
+                                    <select class="form-select" id="question3" name="question3" required>
+                                        <option value="">Choose a question...</option>
+                                        <option value="What was your grandmother's first name?">What was your grandmother's first name?</option>
+                                        <option value="What was the model of your first phone?">What was the model of your first phone?</option>
+                                        <option value="What city did you meet your spouse in?">What city did you meet your spouse in?</option>
+                                        <option value="What was your favorite teacher's name?">What was your favorite teacher's name?</option>
+                                        <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="answer3" class="form-label">Answer 3 *</label>
+                                    <input type="text" class="form-control" id="answer3" name="answer3" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recovery Email -->
+                    <div class="mb-4">
+                        <label for="recovery_email" class="form-label">Recovery Email (Optional)</label>
+                        <input type="email" class="form-control" id="recovery_email" name="recovery_email">
+                        <div class="form-text">If different from your main email address</div>
+                    </div>
+                    
+                    <!-- Confirmation -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-check-circle me-2"></i>Recovery System Summary</h6>
+                        <ul class="mb-0">
+                            <li>✅ Password Key: Your login password</li>
+                            <li>✅ Security Questions: 3 personalized questions</li>
+                            <li>✅ Recovery Phrase: 12-word backup phrase</li>
+                            <li>✅ Admin Master Key: Emergency admin assistance</li>
+                            <li>✅ Time-Lock Key: Legal/inheritance access</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmSaved" required>
+                        <label class="form-check-label" for="confirmSaved">
+                            I have securely saved my recovery phrase and understand the recovery system *
+                        </label>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-shield-alt me-2"></i>Complete Setup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyRecoveryPhrase() {
+    const phrase = "{{ recovery_phrase }}";
+    navigator.clipboard.writeText(phrase).then(function() {
+        alert('Recovery phrase copied to clipboard!');
+    });
+}
+
+// Prevent form resubmission
+document.getElementById('recoveryForm').addEventListener('submit', function() {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Setting up...';
+});
+</script>
+{% endblock %}

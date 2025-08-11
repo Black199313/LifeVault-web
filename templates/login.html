@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-2"><small>Forgot your password? No problem!</small></p>
+                    <a href="{{ url_for('recovery') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-key me-1"></i>Recover Access
+                    </a>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-0"><small>Don't have an account?</small></p>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus me-1"></i>Create Account
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body text-center bg-info text-white">
+                <h6><i class="fas fa-shield-alt me-2"></i>5-Key Protection</h6>
+                <small>Even if you forget your password, your data is never lost thanks to our multi-key recovery system.</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

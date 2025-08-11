@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+                <p class="text-muted mb-0">Join the most secure secret management system</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="registerForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username *</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                                <div class="form-text">Choose a unique username</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="form-text">Used for account recovery</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                                <div class="form-text">At least 8 characters</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password *</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8">
+                                <div class="form-text">Must match password</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>What happens next?</h6>
+                        <small>After creating your account, you'll set up your 5-key recovery system including security questions and your recovery phrase.</small>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-0"><small>Already have an account?</small></p>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6><i class="fas fa-lock me-2"></i>Your Security Promise</h6>
+                <div class="row g-2">
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-key text-primary"></i>
+                        <small class="d-block">Password Protection</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-question-circle text-info"></i>
+                        <small class="d-block">Security Questions</small>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <i class="fas fa-scroll text-warning"></i>
+                        <small class="d-block">Recovery Phrase</small>
+                    </div>
+                </div>
+                <p class="text-center mb-0 mt-2"><small class="text-muted">99.99% data recovery success rate</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+});
+</script>
+{% endblock %}

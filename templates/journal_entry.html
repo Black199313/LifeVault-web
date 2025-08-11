@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Journal Entry - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>
+                        <i class="fas fa-pencil-alt me-2"></i>
+                        {% if entry %}Edit{% else %}New{% endif %} Journal Entry
+                    </h4>
+                    <a href="{{ url_for('journal') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Calendar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="entry_date" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="entry_date" name="entry_date" 
+                                   value="{{ entry.entry_date if entry else entry_date }}" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="mood" class="form-label">Mood</label>
+                            <select class="form-select" id="mood" name="mood">
+                                <option value="">Select your mood...</option>
+                                <option value="happy" {% if entry and entry.mood == 'happy' %}selected{% endif %}>😊 Happy</option>
+                                <option value="content" {% if entry and entry.mood == 'content' %}selected{% endif %}>😌 Content</option>
+                                <option value="calm" {% if entry and entry.mood == 'calm' %}selected{% endif %}>😎 Calm</option>
+                                <option value="excited" {% if entry and entry.mood == 'excited' %}selected{% endif %}>🤩 Excited</option>
+                                <option value="sad" {% if entry and entry.mood == 'sad' %}selected{% endif %}>😢 Sad</option>
+                                <option value="angry" {% if entry and entry.mood == 'angry' %}selected{% endif %}>😠 Angry</option>
+                                <option value="anxious" {% if entry and entry.mood == 'anxious' %}selected{% endif %}>😰 Anxious</option>
+                                <option value="stressed" {% if entry and entry.mood == 'stressed' %}selected{% endif %}>😵 Stressed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="content" class="form-label">Journal Entry *</label>
+                            <textarea class="form-control" id="content" name="content" rows="15" required 
+                                      placeholder="Write about your day, thoughts, feelings, experiences...">{{ entry.content if entry else '' }}</textarea>
+                            <div class="form-text">Express yourself freely - this journal is private and requires no login</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="tags" class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   value="{% if entry and entry.tags %}{{ entry.tags|join(', ') }}{% endif %}"
+                                   placeholder="work, family, travel, health, goals (separate with commas)">
+                            <div class="form-text">Add tags to categorize your entry (optional)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('journal') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if entry %}Update Entry{% else %}Save Entry{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if entry %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <small class="text-muted">Created</small>
+                        <div>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Last Updated</small>
+                        <div>{{ entry.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Word Count</small>
+                        <div id="wordCount">{{ entry.content.split()|length if entry.content else 0 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-resize textarea
+const textarea = document.getElementById('content');
+textarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+// Real-time word count
+textarea.addEventListener('input', function() {
+    const wordCount = this.value.trim().split(/\s+/).filter(word => word.length > 0).length;
+    const counter = document.getElementById('wordCount');
+    if (counter) {
+        counter.textContent = wordCount;
+    }
+});
+
+// Set default date to today if creating new entry
+if (!document.getElementById('entry_date').value) {
+    document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+}
+
+// Auto-save draft functionality (optional)
+let saveTimeout;
+textarea.addEventListener('input', function() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        // Could implement auto-save to localStorage here
+        console.log('Auto-save draft...');
+    }, 2000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Account Recovery - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-key me-2"></i>Account Recovery</h4>
+                <p class="text-muted mb-0">Choose your recovery method - your data is never lost!</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-shield-alt me-2"></i>5-Key Recovery System</h6>
+                    <p class="mb-0">We have 5 different ways to recover your account. Choose the method that works best for you.</p>
+                </div>
+                
+                <form method="POST" id="recoveryForm">
+                    <div class="mb-4">
+                        <label for="username" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="form-text">Enter the username for the account you want to recover</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Choose Recovery Method *</label>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card recovery-option">
+                                    <div class="card-body text-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recovery_type" id="security_questions" value="security_questions" required>
+                                            <label class="form-check-label w-100" for="security_questions">
+                                                <i class="fas fa-question-circle fa-3x text-info mb-2 d-block"></i>
+                                                <h6>Security Questions</h6>
+                                                <small class="text-muted">Answer your personalized security questions</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card recovery-option">
+                                    <div class="card-body text-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recovery_type" id="recovery_phrase" value="recovery_phrase" required>
+                                            <label class="form-check-label w-100" for="recovery_phrase">
+                                                <i class="fas fa-scroll fa-3x text-warning mb-2 d-block"></i>
+                                                <h6>Recovery Phrase</h6>
+                                                <small class="text-muted">Use your 12-word recovery phrase</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card recovery-option">
+                                    <div class="card-body text-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recovery_type" id="email" value="email" required>
+                                            <label class="form-check-label w-100" for="email">
+                                                <i class="fas fa-envelope fa-3x text-primary mb-2 d-block"></i>
+                                                <h6>Email Recovery</h6>
+                                                <small class="text-muted">Get a recovery link sent to your email</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card recovery-option">
+                                    <div class="card-body text-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="recovery_type" id="admin_help" value="admin_help" disabled>
+                                            <label class="form-check-label w-100" for="admin_help">
+                                                <i class="fas fa-user-shield fa-3x text-success mb-2 d-block"></i>
+                                                <h6>Admin Assistance</h6>
+                                                <small class="text-muted">Contact support for help (Coming Soon)</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right me-2"></i>Continue Recovery
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-2"><small>Remember your password?</small></p>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-sign-in-alt me-1"></i>Back to Login
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-body bg-success text-white text-center">
+                <h6><i class="fas fa-chart-line me-2"></i>99.99% Recovery Success Rate</h6>
+                <p class="mb-0">Our 5-key system ensures you can always recover your data, even in extreme situations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.recovery-option {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.recovery-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.recovery-option input[type="radio"]:checked + .form-check-label {
+    color: var(--bs-primary);
+}
+
+.recovery-option input[type="radio"]:disabled + .form-check-label {
+    opacity: 0.6;
+}
+</style>
+
+<script>
+// Make entire card clickable
+document.querySelectorAll('.recovery-option').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (!radio.disabled) {
+            radio.checked = true;
+        }
+    });
+});
+</script>
+{% endblock %}

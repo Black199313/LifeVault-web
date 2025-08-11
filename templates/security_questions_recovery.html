@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Security Questions Recovery - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-question-circle me-2"></i>Security Questions Recovery</h4>
+                <p class="text-muted mb-0">Answer your security questions to recover your account</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Instructions</h6>
+                    <p class="mb-0">Please answer at least 2 out of 3 security questions correctly to recover your account.</p>
+                </div>
+                
+                <form method="POST">
+                    {% for i in range(3) %}
+                    <div class="mb-4">
+                        <label for="answer{{ loop.index }}" class="form-label">
+                            <strong>Question {{ loop.index }}:</strong>
+                        </label>
+                        <p class="text-muted mb-2">{{ questions[i] }}</p>
+                        <input type="text" class="form-control" id="answer{{ loop.index }}" name="answer{{ loop.index }}" required>
+                        <div class="form-text">Enter your answer exactly as you provided during setup</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-unlock me-2"></i>Verify Answers
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="mb-2"><small>Try a different recovery method?</small></p>
+                    <a href="{{ url_for('recovery') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Recovery Options
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body bg-warning text-dark text-center">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Having Trouble?</h6>
+                <p class="mb-0"><small>If you can't remember your security question answers, try using your recovery phrase or email recovery instead.</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

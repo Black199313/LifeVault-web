@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="text-center">
+            <div class="error-page">
+                <i class="fas fa-exclamation-triangle fa-5x text-warning mb-4"></i>
+                <h1 class="display-1 text-muted">500</h1>
+                <h3 class="mb-4">Internal Server Error</h3>
+                <p class="lead text-muted mb-5">
+                    Something went wrong on our end. We're working to fix it.
+                </p>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>Go Home
+                    </a>
+                    <a href="javascript:location.reload()" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-2"></i>Try Again
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle me-2"></i>Don't Worry - Your Data is Safe</h5>
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        <strong>Your secrets and journal entries are protected by our 5-key encryption system.</strong>
+                        This temporary error doesn't affect your stored data. All your information remains secure and accessible once the issue is resolved.
+                    </p>
+                </div>
+                
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                                <h6>Data Protection</h6>
+                                <small class="text-muted">Your encrypted data is safe and backed up</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-key fa-2x text-primary mb-2"></i>
+                                <h6>5-Key Recovery</h6>
+                                <small class="text-muted">Multiple ways to access your data</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6><i class="fas fa-life-ring me-2"></i>Need Immediate Help?</h6>
+                <p class="text-muted mb-3">If this error persists or you need to access your data urgently:</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('recovery') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-unlock me-2"></i>Account Recovery
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                        <i class="fas fa-envelope me-2"></i>Contact Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 3rem 0;
+}
+</style>
+{% endblock %}

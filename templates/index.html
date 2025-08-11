@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section text-center py-5 mb-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="display-4 mb-4">
+                <i class="fas fa-shield-alt text-primary me-3"></i>
+                No-Loss Secret Management
+            </h1>
+            <p class="lead mb-4">
+                Your secrets are protected by our revolutionary 5-key system. 
+                Even if you forget your password, your data is never lost.
+            </p>
+            
+            {% if not current_user.is_authenticated %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-user-plus me-2"></i>Get Started
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </a>
+            </div>
+            {% else %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('secrets') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-key me-2"></i>My Secrets
+                </a>
+                <a href="{{ url_for('journal') }}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-calendar-alt me-2"></i>Journal
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-lg-12">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-lock me-2"></i>5-Key Protection System
+        </h2>
+        <p class="text-center text-muted mb-5">
+            Every piece of your secret data has 5 different keys to unlock it. You'll never lose access.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-primary mb-3">
+                    <i class="fas fa-key fa-3x"></i>
+                </div>
+                <h5 class="card-title">Password Key</h5>
+                <p class="card-text">Your daily login password provides primary access to all your secrets.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-info mb-3">
+                    <i class="fas fa-question-circle fa-3x"></i>
+                </div>
+                <h5 class="card-title">Security Questions</h5>
+                <p class="card-text">Answer your personalized security questions to regain access.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-warning mb-3">
+                    <i class="fas fa-scroll fa-3x"></i>
+                </div>
+                <h5 class="card-title">Recovery Phrase</h5>
+                <p class="card-text">Your unique 12-word recovery phrase works as offline backup.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-success mb-3">
+                    <i class="fas fa-user-shield fa-3x"></i>
+                </div>
+                <h5 class="card-title">Admin Recovery</h5>
+                <p class="card-text">Administrators can help restore access when other methods fail.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-danger mb-3">
+                    <i class="fas fa-clock fa-3x"></i>
+                </div>
+                <h5 class="card-title">Time-Lock Key</h5>
+                <p class="card-text">Emergency access for legal situations and inheritance.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="feature-icon text-secondary mb-3">
+                    <i class="fas fa-calendar-alt fa-3x"></i>
+                </div>
+                <h5 class="card-title">Journal Access</h5>
+                <p class="card-text">Write journal entries freely without any authentication required.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-lg-8 mx-auto">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center py-4">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-line me-2"></i>99.99% Recovery Success Rate
+                </h3>
+                <p class="card-text lead mb-0">
+                    Our 5-key system ensures virtually no legitimate user ever loses access to their data permanently.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <h3><i class="fas fa-journal-whills me-2"></i>Anonymous Journal</h3>
+        <p>Write your thoughts and memories without any login required. Perfect for daily journaling and personal reflection.</p>
+        <a href="{{ url_for('journal') }}" class="btn btn-outline-primary">
+            <i class="fas fa-pencil-alt me-2"></i>Start Writing
+        </a>
+    </div>
+    
+    <div class="col-lg-6">
+        <h3><i class="fas fa-vault me-2"></i>Secure Secrets</h3>
+        <p>Store passwords, API keys, and sensitive information with enterprise-grade encryption and multiple recovery options.</p>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('secrets') }}" class="btn btn-outline-primary">
+            <i class="fas fa-key me-2"></i>Manage Secrets
+        </a>
+        {% else %}
+        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+            <i class="fas fa-user-plus me-2"></i>Create Account
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

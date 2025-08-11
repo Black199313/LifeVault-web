@@ -1,0 +1,358 @@
+/* Custom styles for Secret Journal Manager */
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    --success-gradient: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    --warning-gradient: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    --danger-gradient: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);
+    --info-gradient: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* General improvements */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    line-height: 1.6;
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+/* Hero section styling */
+.hero-section {
+    background: var(--primary-gradient);
+    border-radius: 1rem;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.hero-section .btn {
+    border-radius: 2rem;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+}
+
+/* Feature cards styling */
+.feature-icon {
+    transition: transform 0.3s ease;
+}
+
+.card:hover .feature-icon {
+    transform: scale(1.1);
+}
+
+/* Calendar styling */
+#calendar {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.fc-theme-standard .fc-scrollgrid {
+    border-radius: 0.5rem;
+}
+
+/* Recovery options styling */
+.recovery-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.recovery-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: var(--bs-primary);
+}
+
+.recovery-option input[type="radio"]:checked + .form-check-label {
+    color: var(--bs-primary);
+}
+
+/* Security status indicators */
+.security-check {
+    background: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.security-check:hover {
+    border-color: var(--bs-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Statistics styling */
+.stat-box {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-box h3, .stat-box h4 {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+/* Secret cards styling */
+.secret-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--bs-border-color);
+}
+
+.secret-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-color: var(--bs-primary);
+}
+
+/* Password visibility toggle */
+.password-toggle {
+    cursor: pointer;
+    border-left: 1px solid var(--bs-border-color);
+}
+
+/* Toast notifications */
+.toast-notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: var(--bs-success);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Journal entry styling */
+.journal-editor {
+    min-height: 400px;
+    border-radius: 0.5rem;
+}
+
+/* Admin dashboard cards */
+.admin-stat-card {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.admin-stat-card .card-body {
+    padding: 2rem;
+}
+
+/* Audit log table */
+.audit-table {
+    font-size: 0.875rem;
+}
+
+.audit-table .table-danger {
+    --bs-table-bg: rgba(220, 53, 69, 0.1);
+}
+
+/* Error pages */
+.error-page {
+    padding: 4rem 0;
+}
+
+.error-page .display-1 {
+    font-size: 8rem;
+    font-weight: 300;
+    opacity: 0.5;
+}
+
+/* Form enhancements */
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+    border-radius: 0.375rem;
+}
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: 0.75rem;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(19, 132, 150, 0.1) 100%);
+    border-left: 4px solid var(--bs-info);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(30, 126, 52, 0.1) 100%);
+    border-left: 4px solid var(--bs-success);
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(224, 168, 0, 0.1) 100%);
+    border-left: 4px solid var(--bs-warning);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(189, 33, 48, 0.1) 100%);
+    border-left: 4px solid var(--bs-danger);
+}
+
+/* Loading states */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 1rem !important;
+    }
+    
+    .hero-section .display-4 {
+        font-size: 2rem;
+    }
+    
+    .recovery-option {
+        margin-bottom: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .error-page .display-1 {
+        font-size: 4rem;
+    }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .security-check {
+    background: var(--bs-dark);
+    border-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .recovery-option {
+    background: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] .toast-notification {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+/* Accessibility improvements */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .btn,
+    .modal,
+    .alert {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        page-break-inside: avoid;
+    }
+}
+
+/* Utility classes */
+.text-gradient-primary {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.border-gradient {
+    border: 2px solid;
+    border-image: var(--primary-gradient) 1;
+}
+
+.shadow-soft {
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1) !important;
+}
+
+.transition-all {
+    transition: all 0.3s ease !important;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bs-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-primary);
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

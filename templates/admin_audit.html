@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Audit Logs{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-clipboard-list me-2"></i>Audit Logs</h2>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Filter Options</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="action_filter" class="form-label">Action</label>
+                        <select class="form-select" id="action_filter" name="action">
+                            <option value="">All Actions</option>
+                            <option value="login">Login</option>
+                            <option value="logout">Logout</option>
+                            <option value="failed_login">Failed Login</option>
+                            <option value="password_reset">Password Reset</option>
+                            <option value="create_secret">Create Secret</option>
+                            <option value="delete_secret">Delete Secret</option>
+                            <option value="admin_password_reset">Admin Password Reset</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="user_filter" class="form-label">User</label>
+                        <input type="text" class="form-control" id="user_filter" name="user" placeholder="Username">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Apply Filters
+                        </button>
+                        <a href="{{ url_for('admin_audit') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i>Clear Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list me-2"></i>Audit Trail</h5>
+                <div>
+                    {% if logs.pages > 1 %}
+                    <small class="text-muted">
+                        Page {{ logs.page }} of {{ logs.pages }} 
+                        ({{ logs.total }} total entries)
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if logs.items %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Resource</th>
+                                <th>Status</th>
+                                <th>IP Address</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs.items %}
+                            <tr class="{% if not log.success %}table-danger{% endif %}">
+                                <td>
+                                    <small class="font-monospace">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                </td>
+                                <td>
+                                    {% if log.user %}
+                                    <span class="badge bg-{% if log.user.is_admin %}primary{% else %}secondary{% endif %}">
+                                        {{ log.user.username }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ log.action.replace('_', ' ').title() }}</span>
+                                </td>
+                                <td>{{ log.resource_type.replace('_', ' ').title() }}</td>
+                                <td>
+                                    {% if log.success %}
+                                    <span class="badge bg-success">Success</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.ip_address %}
+                                    <span class="font-monospace small">{{ log.ip_address }}</span>
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.details %}
+                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detailsModal"
+                                            onclick="showDetails({{ log.details|tojson }})">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    {% endif %}
+                                    {% if log.error_message %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm ms-1" 
+                                            data-bs-toggle="tooltip" 
+                                            title="{{ log.error_message }}">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if logs.pages > 1 %}
+                <nav aria-label="Audit log pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if logs.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.prev_num) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in logs.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != logs.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_audit', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if logs.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.next_num) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h4>No Audit Logs Found</h4>
+                    <p class="text-muted">No audit logs match your current filter criteria.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>Audit Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="detailsContent" class="bg-light p-3 rounded"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showDetails(details) {
+    document.getElementById('detailsContent').textContent = JSON.stringify(details, null, 2);
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
