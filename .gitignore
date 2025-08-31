@@ -1,0 +1,59 @@
+# Environment variables
+.env
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# MongoDB data
+mongo_data/
+
+# Logs
+*.log
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+
+# Test files (optional - you might want to keep these)
+test_*.py
+debug_*.py
+
+# Sensitive configuration
+config.ini
+secrets.json
+private_keys/
+
+# Node modules (if any)
+node_modules/
+
+# Build directories
+build/
+dist/

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Update Recovery Options - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-cog me-2"></i>Update Recovery Options</h2>
+            <a href="{{ url_for('user_profile') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Profile
+            </a>
+        </div>
+        
+        <form method="POST">
+            <!-- Recovery Email -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-envelope me-2"></i>Recovery Email</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="recovery_email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="recovery_email" name="recovery_email" 
+                               value="{{ user.recovery_email or '' }}" 
+                               placeholder="Enter recovery email address">
+                        <div class="form-text">
+                            This email will be used for account recovery notifications.
+                            {% if not user.recovery_email %}
+                            <strong>Note:</strong> A recovery password will be sent to this email for account recovery.
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Password field for email recovery setup/update -->
+                    <div id="email-password-section" style="display: none;">
+                        <div class="mb-3">
+                            <label for="email_password" class="form-label">Current Password <span class="text-muted">(Optional)</span></label>
+                            <input type="password" class="form-control" id="email_password" name="password" 
+                                   placeholder="Enter password only if you want to enable email recovery">
+                            <div class="form-text">
+                                <strong>Optional:</strong> Only provide your password if you want to set up email recovery (E-DEK). Leave blank to just update the email address without enabling recovery.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Questions -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-question-circle me-2"></i>Security Questions</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="update_questions" name="update_questions">
+                        <label class="form-check-label" for="update_questions">
+                            Update Questions
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if user.security_questions %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        You currently have {{ user.security_questions|length }} security questions configured.
+                        Check "Update Questions" above to modify them.
+                    </div>
+                    {% endif %}
+                    
+                    <div id="questions-section" style="display: none;">
+                        <div class="mb-3">
+                            <label for="question_1" class="form-label">Security Question 1</label>
+                            <input type="text" class="form-control" id="question_1" name="question_1" 
+                                   placeholder="e.g., What was the name of your first pet?"
+                                   value="{{ user.security_questions[0].question if user.security_questions and user.security_questions|length > 0 else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="answer_1" class="form-label">Answer 1</label>
+                            <input type="text" class="form-control" id="answer_1" name="answer_1" 
+                                   placeholder="Enter your answer">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="question_2" class="form-label">Security Question 2</label>
+                            <input type="text" class="form-control" id="question_2" name="question_2" 
+                                   placeholder="e.g., What city were you born in?"
+                                   value="{{ user.security_questions[1].question if user.security_questions and user.security_questions|length > 1 else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="answer_2" class="form-label">Answer 2</label>
+                            <input type="text" class="form-control" id="answer_2" name="answer_2" 
+                                   placeholder="Enter your answer">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="question_3" class="form-label">Security Question 3</label>
+                            <input type="text" class="form-control" id="question_3" name="question_3" 
+                                   placeholder="e.g., What was your mother's maiden name?"
+                                   value="{{ user.security_questions[2].question if user.security_questions and user.security_questions|length > 2 else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="answer_3" class="form-label">Answer 3</label>
+                            <input type="text" class="form-control" id="answer_3" name="answer_3" 
+                                   placeholder="Enter your answer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recovery Phrase -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-key me-2"></i>Recovery Phrase</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="update_phrase" name="update_phrase">
+                        <label class="form-check-label" for="update_phrase">
+                            Generate New Phrase
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if user.recovery_phrase %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        You have a recovery phrase configured. Check "Generate New Phrase" to create a new one.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No recovery phrase is currently configured. Check "Generate New Phrase" to create one.
+                    </div>
+                    {% endif %}
+                    
+                    <div id="phrase-section" style="display: none;">
+                        <div class="alert alert-info">
+                            <strong>Important:</strong> Generating a new recovery phrase will replace your existing phrase.
+                            You will need to provide your current password to confirm this action.
+                        </div>
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" 
+                                   placeholder="Enter your current password to generate new phrase">
+                        </div>
+                        <div class="d-grid mb-3">
+                            <button type="button" id="generate-phrase-btn" class="btn btn-warning">
+                                <i class="fas fa-key me-1"></i>Generate New Recovery Phrase
+                            </button>
+                        </div>
+                        <div id="new-phrase-display" style="display: none;" class="alert alert-success">
+                            <h6><i class="fas fa-check-circle me-2"></i>New Recovery Phrase Generated!</h6>
+                            <p><strong>Please save this phrase securely:</strong></p>
+                            <div id="phrase-text" class="bg-dark text-white p-3 rounded font-monospace text-center">
+                                <!-- Phrase will be displayed here -->
+                            </div>
+                            <p class="mt-2 mb-0"><small>This phrase will not be shown again. Store it in a safe place!</small></p>
+                            <input type="hidden" id="generated_phrase" name="generated_phrase">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('user_profile') }}" class="btn btn-outline-secondary me-md-2">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Update Recovery Options
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const updateQuestionsCheckbox = document.getElementById('update_questions');
+    const questionsSection = document.getElementById('questions-section');
+    const updatePhraseCheckbox = document.getElementById('update_phrase');
+    const phraseSection = document.getElementById('phrase-section');
+    const generatePhraseBtn = document.getElementById('generate-phrase-btn');
+    const currentPasswordInput = document.getElementById('current_password');
+    const newPhraseDisplay = document.getElementById('new-phrase-display');
+    const phraseText = document.getElementById('phrase-text');
+    const generatedPhraseInput = document.getElementById('generated_phrase');
+    
+    // Email recovery elements
+    const recoveryEmailInput = document.getElementById('recovery_email');
+    const emailPasswordSection = document.getElementById('email-password-section');
+    const originalEmail = recoveryEmailInput.value;
+    
+    updateQuestionsCheckbox.addEventListener('change', function() {
+        questionsSection.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    updatePhraseCheckbox.addEventListener('change', function() {
+        phraseSection.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Show password field when email is changed
+    recoveryEmailInput.addEventListener('input', function() {
+        const newEmail = this.value.trim();
+        const isEmailChanged = newEmail !== originalEmail && newEmail !== '';
+        emailPasswordSection.style.display = isEmailChanged ? 'block' : 'none';
+        
+        // Only require password for email changes if user is not just updating other fields
+        const emailPasswordInput = document.getElementById('email_password');
+        if (isEmailChanged) {
+            emailPasswordInput.required = false; // Don't make it automatically required
+            // Show a note instead
+            const emailNote = document.querySelector('#email-password-section .form-text');
+            if (emailNote) {
+                emailNote.innerHTML = '<strong>Note:</strong> Password is only required if you want to set up email recovery (E-DEK). Leave blank to just update the email address.';
+            }
+        } else {
+            emailPasswordInput.required = false;
+        }
+    });
+    
+    updatePhraseCheckbox.addEventListener('change', function() {
+        phraseSection.style.display = this.checked ? 'block' : 'none';
+        // Hide the phrase display if unchecking
+        if (!this.checked) {
+            newPhraseDisplay.style.display = 'none';
+            generatedPhraseInput.value = '';
+        }
+    });
+    
+    generatePhraseBtn.addEventListener('click', function() {
+        const password = currentPasswordInput.value;
+        if (!password) {
+            alert('Please enter your current password first.');
+            currentPasswordInput.focus();
+            return;
+        }
+        
+        // Generate a new recovery phrase (12 words)
+        const words = [
+            'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract', 'absurd', 'abuse',
+            'access', 'accident', 'account', 'accuse', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'act',
+            'action', 'actor', 'actress', 'actual', 'adapt', 'add', 'addict', 'address', 'adjust', 'admit',
+            'adult', 'advance', 'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'against', 'age',
+            'agent', 'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album', 'alcohol',
+            'alert', 'alien', 'all', 'alley', 'allow', 'almost', 'alone', 'alpha', 'already', 'also',
+            'alter', 'always', 'amateur', 'amazing', 'among', 'amount', 'amused', 'analyst', 'anchor', 'ancient',
+            'anger', 'angle', 'angry', 'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna',
+            'antique', 'anxiety', 'any', 'apart', 'apology', 'appear', 'apple', 'approve', 'april', 'area'
+        ];
+        
+        // Generate 12 random words
+        const recoveryPhrase = Array.from({length: 12}, () => words[Math.floor(Math.random() * words.length)]).join(' ');
+        
+        // Display the phrase
+        phraseText.textContent = recoveryPhrase;
+        generatedPhraseInput.value = recoveryPhrase;
+        newPhraseDisplay.style.display = 'block';
+        
+        // Scroll to the phrase display
+        newPhraseDisplay.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+});
+</script>
+{% endblock %}

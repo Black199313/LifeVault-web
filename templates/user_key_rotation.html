@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+
+{% block title %}Key Rotation Management - LifeVault{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-sync-alt me-2"></i>Key Rotation Management
+                    </h3>
+                    <small>Secure key rotation system for enhanced security</small>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="rotationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="request-tab" data-bs-toggle="tab" data-bs-target="#request-pane" type="button" role="tab">
+                                <i class="fas fa-plus-circle me-2"></i>Request Rotation
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab">
+                                <i class="fas fa-list me-2"></i>My Requests
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="execute-tab" data-bs-toggle="tab" data-bs-target="#execute-pane" type="button" role="tab">
+                                <i class="fas fa-play-circle me-2"></i>Execute Rotation
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="rotationTabContent">
+                        
+                        <!-- Request Rotation Tab -->
+                        <div class="tab-pane fade show active" id="request-pane" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5><i class="fas fa-paper-plane me-2"></i>Submit New Rotation Request</h5>
+                                    <p class="text-muted">Request a new key rotation from the administrator. Each request is processed individually.</p>
+                                    
+                                    <form id="rotationRequestForm">
+                                        <div class="mb-3">
+                                            <label for="reason" class="form-label">Reason for Key Rotation *</label>
+                                            <select class="form-select" id="reason" name="reason" required>
+                                                <option value="">Select a reason...</option>
+                                                <option value="security_breach">Security Breach Suspected</option>
+                                                <option value="credential_compromise">Credentials May Be Compromised</option>
+                                                <option value="routine_maintenance">Routine Security Maintenance</option>
+                                                <option value="policy_compliance">Compliance Requirement</option>
+                                                <option value="suspicious_activity">Suspicious Account Activity</option>
+                                                <option value="other">Other (explain below)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="description" class="form-label">Additional Details</label>
+                                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                                      placeholder="Provide additional context if needed..."></textarea>
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-paper-plane me-2"></i>Submit Request
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-info-circle me-2"></i>Important Information</h6>
+                                        <ul class="mb-0 small">
+                                            <li>Rotation requests require admin approval</li>
+                                            <li>You'll receive a notification when approved</li>
+                                            <li>Multiple requests can be submitted</li>
+                                            <li>Process typically takes 24-48 hours</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- My Requests Tab -->
+                        <div class="tab-pane fade" id="status-pane" role="tabpanel">
+                            <h5><i class="fas fa-history me-2"></i>Rotation Request History</h5>
+                            <p class="text-muted">Track the status of your key rotation requests.</p>
+                            
+                            <div id="requestsList">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading your requests...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Execute Rotation Tab -->
+                        <div class="tab-pane fade" id="execute-pane" role="tabpanel">
+                            <h5><i class="fas fa-cogs me-2"></i>Execute Approved Rotation</h5>
+                            <p class="text-muted">Use your rotation token to execute an approved key rotation.</p>
+                            
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Important</h6>
+                                <p>You will need to provide all your current recovery credentials to rotate your keys. This ensures only you can perform the rotation.</p>
+                            </div>
+                            
+                            <form id="executeRotationForm">
+                                <!-- Token and Admin Password -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-ticket-alt"></i> Rotation Authorization</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="rotationToken" class="form-label">Rotation Token *</label>
+                                                    <input type="text" class="form-control" id="rotationToken" name="token" 
+                                                           placeholder="Enter your rotation token..." required>
+                                                    <div class="form-text">Provided when your rotation request was approved</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="tempPassword" class="form-label">Temporary Password *</label>
+                                                    <input type="password" class="form-control" id="tempPassword" name="temporary_password" 
+                                                           placeholder="Enter temporary password..." required>
+                                                    <div class="form-text">Sent to you by the administrator</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Current Password -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-key"></i> Current Password</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="currentPassword" class="form-label">Your Current Password *</label>
+                                            <input type="password" class="form-control" id="currentPassword" name="current_password" 
+                                                   placeholder="Enter your current password..." required>
+                                            <div class="form-text">Required to decrypt your data during rotation</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recovery Methods (Dynamic) -->
+                                <div id="recoveryMethodsSection">
+                                    <!-- This will be populated dynamically based on user's configured recovery methods -->
+                                </div>
+                                
+                                <!-- New Password (Optional) -->
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-lock"></i> New Password (Optional)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="newPassword" class="form-label">New Password</label>
+                                                    <input type="password" class="form-control" id="newPassword" name="new_password" 
+                                                           placeholder="Leave blank to keep current password">
+                                                    <div class="form-text">Leave empty to keep your current password</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                                                    <input type="password" class="form-control" id="confirmNewPassword" 
+                                                           placeholder="Confirm new password">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Confirmation -->
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Key Rotation Process</h6>
+                                    <p class="mb-2">This operation will:</p>
+                                    <ul class="mb-0">
+                                        <li>Generate fresh encryption keys</li>
+                                        <li>Re-encrypt all your stored data</li>
+                                        <li>Update all your recovery methods</li>
+                                        <li>Maintain access to all your secrets</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmRotation" required>
+                                    <label class="form-check-label" for="confirmRotation">
+                                        I understand that this action cannot be undone and will rotate all my encryption keys.
+                                    </label>
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-sync-alt me-2"></i>Execute Key Rotation
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Processing...</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <p id="progressMessage">Processing your request...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    
+    // Load requests when status tab is shown
+    document.getElementById('status-tab').addEventListener('shown.bs.tab', loadUserRequests);
+    
+    // Request rotation form submission
+    document.getElementById('rotationRequestForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            reason: formData.get('reason'),
+            description: formData.get('description')
+        };
+        
+        let fallbackTimer;
+        
+        try {
+            console.log('Starting rotation request...');
+            document.getElementById('progressMessage').textContent = 'Submitting rotation request...';
+            progressModal.show();
+            
+            // Add a fallback timer to hide modal after 60 seconds no matter what
+            fallbackTimer = setTimeout(() => {
+                console.log('Fallback timer triggered - hiding modal');
+                try {
+                    progressModal.hide();
+                } catch (e) {
+                    console.error('Error in fallback modal hide:', e);
+                }
+            }, 60000);
+            
+            console.log('Request data:', data);
+            
+            // Create a timeout controller
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                console.log('Request timed out after 30 seconds');
+                controller.abort();
+            }, 30000); // 30 second timeout
+            
+            console.log('Sending fetch request...');
+            const response = await fetch('/api/request_key_rotation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+                signal: controller.signal
+            });
+            
+            console.log('Response received:', response.status, response.statusText);
+            clearTimeout(timeoutId);
+            clearTimeout(fallbackTimer);
+            
+            const result = await response.json();
+            console.log('Request result:', result);
+            
+            console.log('Attempting to hide modal...');
+            try {
+                progressModal.hide();
+                console.log('Modal hidden successfully');
+            } catch (modalError) {
+                console.error('Error hiding modal:', modalError);
+            }
+            
+            // Force hide modal manually as backup
+            setTimeout(() => {
+                console.log('Force hiding modal manually...');
+                const modalElement = document.getElementById('progressModal');
+                if (modalElement) {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    modalElement.setAttribute('aria-hidden', 'true');
+                    modalElement.removeAttribute('aria-modal');
+                    modalElement.removeAttribute('role');
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                        console.log('Modal backdrop removed');
+                    }
+                    console.log('Modal force hidden');
+                }
+            }, 100);
+            
+            if (response.ok && result.success) {
+                console.log('Request successful');
+                alert('✅ Rotation request submitted successfully! You will be notified when approved.');
+                console.log('Resetting form...');
+                this.reset();
+                console.log('Switching to status tab...');
+                // Switch to status tab to show the new request
+                document.getElementById('status-tab').click();
+                console.log('Loading user requests...');
+                loadUserRequests(); // Refresh the requests list
+                console.log('All success actions completed');
+            } else {
+                console.log('Request failed:', result);
+                alert('❌ Error: ' + (result.error || 'Failed to submit request'));
+            }
+        } catch (error) {
+            console.error('Request submission error:', error);
+            
+            // Clear timers
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+            }
+            
+            // Ensure modal is hidden
+            try {
+                progressModal.hide();
+            } catch (modalError) {
+                console.error('Error hiding modal:', modalError);
+                // Fallback: manually hide modal
+                const modalElement = document.getElementById('progressModal');
+                if (modalElement) {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                }
+            }
+            
+            if (error.name === 'AbortError') {
+                console.log('Request was aborted due to timeout');
+                alert('❌ Request timed out after 30 seconds. Please check your connection and try again.');
+            } else if (error.message.includes('fetch') || error.message.includes('network')) {
+                console.log('Network error occurred');
+                alert('❌ Network error. Please check your connection and try again.');
+            } else {
+                console.log('Other error occurred:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+    });
+    
+    // Execute rotation form submission
+    document.getElementById('executeRotationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validate form
+        if (!validateExecuteForm()) {
+            return;
+        }
+        
+        // Collect form data
+        const formData = {
+            token: document.getElementById('rotationToken').value,
+            temporary_password: document.getElementById('tempPassword').value,
+            current_password: document.getElementById('currentPassword').value,
+            new_password: document.getElementById('newPassword').value || undefined
+        };
+        
+        // Add recovery method data if they exist
+        if (userRecoveryMethods.has_security_questions) {
+            formData.security_answers = [
+                document.getElementById('answer1').value,
+                document.getElementById('answer2').value,
+                document.getElementById('answer3').value
+            ];
+        }
+        
+        if (userRecoveryMethods.has_recovery_phrase) {
+            formData.recovery_phrase = document.getElementById('recoveryPhrase').value.trim();
+        }
+        
+        if (userRecoveryMethods.has_email_recovery) {
+            formData.email_password = document.getElementById('emailPassword').value;
+        }
+        
+        try {
+            document.getElementById('progressMessage').textContent = 'Executing key rotation...';
+            progressModal.show();
+            
+            const response = await fetch('/api/rotate_keys_with_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            progressModal.hide();
+            
+            if (response.ok) {
+                alert('✅ Key rotation completed successfully! All your encryption keys have been updated.');
+                window.location.href = '/logout';
+            } else {
+                alert('❌ Error: ' + (result.error || 'Failed to execute rotation'));
+            }
+        } catch (error) {
+            progressModal.hide();
+            alert('❌ Error: ' + error.message);
+        }
+    });
+    
+    // Load recovery methods when execute tab is shown
+    document.getElementById('execute-tab').addEventListener('shown.bs.tab', loadUserRecoveryMethods);
+});
+
+async function loadUserRequests() {
+    try {
+        const response = await fetch('/api/user_rotation_requests');
+        const data = await response.json();
+        
+        const container = document.getElementById('requestsList');
+        
+        if (data.requests && data.requests.length > 0) {
+            container.innerHTML = data.requests.map(request => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="card-title">
+                                    <span class="badge bg-${getStatusColor(request.status)} me-2">${request.status.toUpperCase()}</span>
+                                    ${request.reason || 'Key Rotation Request'}
+                                </h6>
+                                <p class="card-text text-muted mb-2">${request.description || 'No additional details provided'}</p>
+                                <small class="text-muted">
+                                    Requested: ${new Date(request.created_at).toLocaleString()}
+                                    ${request.approved_at ? `<br>Approved: ${new Date(request.approved_at).toLocaleString()}` : ''}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                ${request.status === 'approved' ? `
+                                    <button class="btn btn-sm btn-success" onclick="copyToken('${request.token_id}')">
+                                        <i class="fas fa-copy me-1"></i>Copy Token
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Rotation Requests</h5>
+                    <p class="text-muted">You haven't submitted any key rotation requests yet.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        document.getElementById('requestsList').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>Error loading requests: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'pending': 'warning',
+        'approved': 'success',
+        'in_progress': 'info',
+        'completed': 'primary',
+        'finalized': 'success',
+        'expired': 'secondary',
+        'failed': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+function copyToken(tokenId) {
+    navigator.clipboard.writeText(tokenId).then(() => {
+        alert('Token copied to clipboard!');
+    }).catch(err => {
+        prompt('Copy this token:', tokenId);
+    });
+}
+
+// Global variables for recovery methods
+let userRecoveryMethods = {};
+let requiredFields = ['rotationToken', 'tempPassword', 'currentPassword'];
+
+async function loadUserRecoveryMethods() {
+    try {
+        const response = await fetch('/api/user_recovery_methods');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            userRecoveryMethods = result.methods;
+            buildRecoveryMethodsForm();
+        } else {
+            console.error('Failed to load recovery methods:', result.error);
+            // Fallback: assume user has basic recovery methods
+            userRecoveryMethods = {
+                has_security_questions: true,
+                has_recovery_phrase: true,
+                has_email_recovery: false,
+                recovery_email: null
+            };
+            buildRecoveryMethodsForm();
+        }
+    } catch (error) {
+        console.error('Error loading recovery methods:', error);
+        // Fallback: assume user has basic recovery methods
+        userRecoveryMethods = {
+            has_security_questions: true,
+            has_recovery_phrase: true,
+            has_email_recovery: false,
+            recovery_email: null
+        };
+        buildRecoveryMethodsForm();
+    }
+}
+
+function buildRecoveryMethodsForm() {
+    const container = document.getElementById('recoveryMethodsSection');
+    let html = '';
+    
+    // Reset required fields to base set
+    requiredFields = ['rotationToken', 'tempPassword', 'currentPassword'];
+    
+    // Security Questions (Q-DEK)
+    if (userRecoveryMethods.has_security_questions) {
+        html += `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-question-circle"></i> Security Questions *</h6>
+                    <small class="text-muted">Required - You have security questions configured</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer1" class="form-label">Answer 1</label>
+                                <input type="text" class="form-control" id="answer1" 
+                                       placeholder="Enter your first answer" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer2" class="form-label">Answer 2</label>
+                                <input type="text" class="form-control" id="answer2" 
+                                       placeholder="Enter your second answer" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer3" class="form-label">Answer 3</label>
+                                <input type="text" class="form-control" id="answer3" 
+                                       placeholder="Enter your third answer" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('answer1', 'answer2', 'answer3');
+    }
+    
+    // Recovery Phrase (R-DEK)
+    if (userRecoveryMethods.has_recovery_phrase) {
+        html += `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-file-alt"></i> Recovery Phrase *</h6>
+                    <small class="text-muted">Required - You have a recovery phrase configured</small>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="recoveryPhrase" class="form-label">
+                            <i class="fas fa-scroll me-1"></i>12-Word Recovery Phrase
+                        </label>
+                        <textarea class="form-control" id="recoveryPhrase" rows="3" 
+                                 placeholder="Enter your 12-word recovery phrase separated by spaces" required></textarea>
+                        <div class="form-text">Enter all 12 words separated by spaces</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('recoveryPhrase');
+    }
+    
+    // Email Recovery (E-DEK)
+    if (userRecoveryMethods.has_email_recovery) {
+        html += `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-envelope"></i> Email Recovery Password *</h6>
+                    <small class="text-muted">Required - You have email recovery configured for: ${userRecoveryMethods.recovery_email}</small>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="emailPassword" class="form-label">
+                            <i class="fas fa-key me-1"></i>Email Recovery Password
+                        </label>
+                        <input type="text" class="form-control" id="emailPassword" 
+                               placeholder="Enter the password that was sent to your recovery email" required>
+                        <div class="form-text">
+                            This is the permanent password that was emailed to ${userRecoveryMethods.recovery_email} when you set up email recovery.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('emailPassword');
+    }
+    
+    // If no recovery methods are configured, show a notice
+    if (!userRecoveryMethods.has_security_questions && !userRecoveryMethods.has_recovery_phrase && !userRecoveryMethods.has_email_recovery) {
+        html += `
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> No Additional Recovery Methods</h6>
+                <p class="mb-0">You don't have any additional recovery methods configured. Only your password and admin recovery will be rotated.</p>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+function validateExecuteForm() {
+    // Check all required fields
+    for (const fieldId of requiredFields) {
+        const element = document.getElementById(fieldId);
+        if (!element || !element.value.trim()) {
+            alert(`Please fill in the ${fieldId.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
+            element?.focus();
+            return false;
+        }
+    }
+    
+    // Check new password confirmation if provided
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    if (newPassword && newPassword !== confirmPassword) {
+        alert('New password and confirmation do not match.');
+        document.getElementById('confirmNewPassword').focus();
+        return false;
+    }
+    
+    // Check recovery phrase word count if provided
+    if (userRecoveryMethods.has_recovery_phrase) {
+        const recoveryPhrase = document.getElementById('recoveryPhrase').value.trim();
+        const words = recoveryPhrase.split(/\s+/).filter(word => word.length > 0);
+        if (words.length !== 12) {
+            alert('Recovery phrase must contain exactly 12 words.');
+            document.getElementById('recoveryPhrase').focus();
+            return false;
+        }
+    }
+    
+    // Check confirmation
+    if (!document.getElementById('confirmRotation').checked) {
+        alert('Please confirm that you understand this action cannot be undone.');
+        document.getElementById('confirmRotation').focus();
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}

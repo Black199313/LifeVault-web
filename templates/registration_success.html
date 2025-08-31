@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Successful - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle fa-4x text-success"></i>
+                </div>
+                
+                <h4 class="card-title">Registration Successful!</h4>
+                <p class="card-text">Your account has been created successfully.</p>
+                <p class="card-text">Please check your email to verify your account.</p>
+                
+                <div class="mb-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Redirecting...</span>
+                    </div>
+                    <p class="mt-2"><small class="text-muted">Redirecting to login page in <span id="countdown">3</span> seconds...</small></p>
+                </div>
+                
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Go to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto redirect after 3 seconds
+let countdown = 3;
+const countdownElement = document.getElementById('countdown');
+
+function updateCountdown() {
+    countdown--;
+    countdownElement.textContent = countdown;
+    
+    if (countdown <= 0) {
+        window.location.href = "{{ url_for('login') }}";
+    } else {
+        setTimeout(updateCountdown, 1000);
+    }
+}
+
+// Start countdown
+setTimeout(updateCountdown, 1000);
+
+// Also try immediate redirect as backup
+setTimeout(function() {
+    window.location.href = "{{ url_for('login') }}";
+}, 3000);
+</script>
+{% endblock %}

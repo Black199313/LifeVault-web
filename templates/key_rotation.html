@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Key Rotation - LifeVault{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-sync-alt"></i> Complete Key Rotation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Important Security Notice</h5>
+                        <p><strong>Complete key rotation requires all your security credentials.</strong></p>
+                        <ul>
+                            <li>Your current password</li>
+                            <li>All 3 security question answers</li>
+                            <li>Your recovery phrase</li>
+                            <li>Optionally, a new password</li>
+                        </ul>
+                        <p class="mt-2"><small>This process will generate new encryption keys and re-encrypt all your data for maximum security.</small></p>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-shield-alt"></i> Admin Access Preservation</h5>
+                        <p><strong>Your admin recovery capability will be maintained.</strong></p>
+                        <ul class="mb-0">
+                            <li>New Admin-encrypted DEK (A-DEK) will be created</li>
+                            <li>Admins can still help with recovery after rotation</li>
+                            <li>All data remains accessible through admin recovery</li>
+                        </ul>
+                    </div>
+
+                    <form id="keyRotationForm" method="POST">
+                        <!-- Current Password -->
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password *</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            <div class="form-text">Required to verify your identity</div>
+                        </div>
+
+                        <!-- New Password (Optional) -->
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password (Optional)</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password">
+                            <div class="form-text">Leave blank to keep your current password</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password">
+                        </div>
+
+                        <!-- Security Questions -->
+                        <h5 class="mt-4 mb-3">Security Question Answers</h5>
+                        {% if current_user.security_questions %}
+                            {% for sq in current_user.security_questions %}
+                            <div class="mb-3">
+                                <label for="answer_{{ loop.index }}" class="form-label">{{ loop.index }}. {{ sq.question }} *</label>
+                                <input type="text" class="form-control" id="answer_{{ loop.index }}" name="answer_{{ loop.index }}" required>
+                                <div class="form-text">Case-insensitive, spaces will be trimmed</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <p>No security questions found. You must set up security questions before performing key rotation.</p>
+                                <a href="{{ url_for('update_recovery') }}" class="btn btn-primary">Set Up Security Questions</a>
+                            </div>
+                        {% endif %}
+
+                        <!-- Recovery Phrase -->
+                        <div class="mb-4">
+                            <label for="recovery_phrase" class="form-label">Recovery Phrase *</label>
+                            <textarea class="form-control" id="recovery_phrase" name="recovery_phrase" rows="3" required 
+                                      placeholder="Enter your complete recovery phrase"></textarea>
+                            <div class="form-text">Enter the exact recovery phrase you were given</div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('user_profile') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-danger" id="rotateBtn">
+                                <i class="fas fa-sync-alt"></i> Rotate All Keys
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Progress Modal -->
+            <div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-body text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h5>Rotating Encryption Keys...</h5>
+                            <p class="mb-0">This may take a few moments. Please do not close this window.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('keyRotationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate passwords match if new password is provided
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_new_password').value;
+    
+    if (newPassword && newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+    }
+    
+    // Collect form data
+    const formData = {
+        current_password: document.getElementById('current_password').value,
+        new_password: newPassword || null,
+        security_answers: [
+            document.getElementById('answer_1').value,
+            document.getElementById('answer_2').value,
+            document.getElementById('answer_3').value
+        ],
+        recovery_phrase: document.getElementById('recovery_phrase').value
+    };
+    
+    // Show progress modal
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    progressModal.show();
+    
+    // Disable form
+    document.getElementById('rotateBtn').disabled = true;
+    
+    // Submit request
+    fetch('/api/rotate_keys', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressModal.hide();
+        
+        if (data.success) {
+            alert('Key rotation completed successfully! All your encryption keys have been updated.');
+            window.location.href = '{{ url_for("user_profile") }}';
+        } else {
+            alert('Key rotation failed: ' + (data.error || 'Unknown error'));
+            document.getElementById('rotateBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        progressModal.hide();
+        console.error('Error:', error);
+        alert('Key rotation failed: Network error');
+        document.getElementById('rotateBtn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

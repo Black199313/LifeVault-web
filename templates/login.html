@@ -32,19 +32,33 @@
                 
                 <div class="text-center">
                     <p class="mb-2"><small>Forgot your password? No problem!</small></p>
-                    <a href="{{ url_for('recovery') }}" class="btn btn-outline-info btn-sm">
-                        <i class="fas fa-key me-1"></i>Recover Access
-                    </a>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('recover_password_with_questions') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-question-circle me-1"></i>Security Questions Recovery
+                        </a>
+                        <a href="{{ url_for('recover_password_with_phrase') }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-scroll me-1"></i>Recovery Phrase
+                        </a>
+                        <a href="{{ url_for('recovery') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-envelope me-1"></i>Email Recovery
+                        </a>
+                    </div>
                 </div>
                 
                 <hr>
                 
+                {% if config.ALLOW_REGISTRATIONS %}
                 <div class="text-center">
                     <p class="mb-0"><small>Don't have an account?</small></p>
                     <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user-plus me-1"></i>Create Account
                     </a>
                 </div>
+                {% else %}
+                <div class="text-center">
+                    <p class="mb-0"><small class="text-muted">New registrations are handled by administrators</small></p>
+                </div>
+                {% endif %}
             </div>
         </div>
         

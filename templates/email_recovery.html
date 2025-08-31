@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Email Recovery - LifeVault{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>Email Recovery
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-circle fa-3x text-muted mb-3"></i>
+                        <h5>Account: {{ username }}</h5>
+                        <p class="text-muted">Recover your account using email verification</p>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Direct Email Recovery -->
+                    <div id="recovery-form">
+                        <h6><i class="fas fa-unlock-alt me-2"></i>Account Recovery with Email Password</h6>
+                        <p class="text-muted small">
+                            Enter the permanent email recovery password that was sent to your recovery email when you first set it up.
+                            This password does not expire and uses only clear, unambiguous characters.
+                        </p>
+                        
+                        <form method="POST">
+                            <input type="hidden" name="action" value="recover_account">
+                            
+                            <div class="mb-3">
+                                <label for="email_password" class="form-label">
+                                    <i class="fas fa-key me-1"></i>Email Recovery Password
+                                </label>
+                                <input type="text" class="form-control" id="email_password" 
+                                       name="email_password" required 
+                                       placeholder="Enter your email recovery password">
+                                <div class="form-text">
+                                    This is the permanent password that was emailed to you when email recovery was set up.
+                                    It uses only clear characters and does not expire.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>New Account Password
+                                </label>
+                                <input type="password" class="form-control" id="new_password" 
+                                       name="new_password" required 
+                                       placeholder="Enter your new password">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Confirm New Password
+                                </label>
+                                <input type="password" class="form-control" id="confirm_password" 
+                                       name="confirm_password" required 
+                                       placeholder="Confirm your new password">
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check me-2"></i>Recover Account
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Reset Option -->
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <p class="text-muted small mb-2">Don't have or lost your email recovery password?</p>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="showResetForm()">
+                                <i class="fas fa-redo me-2"></i>Reset Email Recovery Password
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reset Email Recovery Form (Hidden by default) -->
+                    <div id="reset-form" style="display: none;">
+                        <h6><i class="fas fa-redo me-2"></i>Reset Email Recovery Password</h6>
+                        <p class="text-muted small">
+                            If you have access to your current account password, you can generate a new email recovery password.
+                        </p>
+                        
+                        <form method="POST">
+                            <input type="hidden" name="action" value="request_password">
+                            
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current Account Password</label>
+                                <input type="password" class="form-control" id="current_password" 
+                                       name="current_password" required 
+                                       placeholder="Enter your current account password">
+                                <div class="form-text">
+                                    This will generate a new email recovery password and send it to your recovery email.
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-paper-plane me-2"></i>Generate & Send New Password
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="showRecoveryForm()">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Recovery
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <a href="{{ url_for('recovery') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Recovery Options
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showResetForm() {
+    document.getElementById('recovery-form').style.display = 'none';
+    document.getElementById('reset-form').style.display = 'block';
+}
+
+function showRecoveryForm() {
+    document.getElementById('reset-form').style.display = 'none';
+    document.getElementById('recovery-form').style.display = 'block';
+}
+
+// Auto-show reset form if there are success messages about password sent
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'success' and 'sent' in message.lower() %}
+                // Stay on main form since user now has the new password
+                setTimeout(function() {
+                    document.getElementById('email_password').focus();
+                }, 1000);
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+</script>
+{% endblock %}

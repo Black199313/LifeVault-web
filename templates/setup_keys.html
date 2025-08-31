@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Encryption Keys - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="fas fa-key me-2"></i>Setup Encryption Keys</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    To secure your data, we need to create encryption keys. Please enter your password to continue.
+                </div>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Your Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text">Enter your account password to create encryption keys</div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>Create Encryption Keys
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body text-center bg-info text-white">
+                <h6><i class="fas fa-shield-alt me-2"></i>Secure Encryption</h6>
+                <small>Your encryption keys will be securely generated and stored to protect your sensitive data.</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

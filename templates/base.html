@@ -53,7 +53,14 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">Users</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_key_rotation_management') }}">
+                                <i class="fas fa-sync-alt me-1"></i>Key Rotation
+                            </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin_audit') }}">Audit Logs</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_export_all_data') }}">
+                                <i class="fas fa-database me-1"></i>System Backup
+                            </a></li>
                         </ul>
                     </li>
                     {% endif %}
@@ -67,6 +74,12 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('key_rotation') }}">
+                                <i class="fas fa-sync-alt me-1"></i>Key Rotation
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                <i class="fas fa-download me-1"></i>Export Data
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>

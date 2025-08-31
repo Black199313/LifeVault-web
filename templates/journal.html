@@ -7,8 +7,13 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="fas fa-calendar-alt me-2"></i>Your Journal</h2>
-            <div class="text-muted">
-                <small><i class="fas fa-info-circle me-1"></i>No login required - write freely</small>
+            <div>
+                <a href="{{ url_for('journal_list') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-list me-1"></i>List View
+                </a>
+                <a href="{{ url_for('journal_entry') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>New Entry
+                </a>
             </div>
         </div>
         
@@ -57,6 +62,33 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+/* Custom calendar hover effects */
+.fc-daygrid-day:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    cursor: pointer;
+}
+
+.fc-daygrid-day-frame:hover {
+    background-color: rgba(0, 123, 255, 0.05) !important;
+}
+
+.fc-event:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.fc-day-today {
+    background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+.fc-button:hover {
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
@@ -71,21 +103,28 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         dateClick: function(info) {
             // Navigate to journal entry for clicked date
+            console.log('Date clicked:', info.dateStr);
             window.location.href = '{{ url_for("journal_entry") }}?date=' + info.dateStr;
         },
         eventClick: function(info) {
             // Navigate to journal entry for clicked event date
+            console.log('Event clicked:', info.event.startStr);
             window.location.href = '{{ url_for("journal_entry") }}?date=' + info.event.startStr;
+            info.jsEvent.preventDefault(); // Prevent browser navigation
         },
         dayMaxEvents: 1,
         moreLinkClick: 'day',
         eventDisplay: 'block',
         eventBackgroundColor: 'var(--bs-primary)',
         eventBorderColor: 'var(--bs-primary)',
-        eventTextColor: 'white'
+        eventTextColor: 'white',
+        selectable: true,
+        dayHeaderClassNames: 'fw-bold',
+        dayCellClassNames: 'position-relative'
     });
     
     calendar.render();
+    console.log('Calendar rendered with events:', {{ calendar_events | tojsonfilter }});
 });
 </script>
 {% endblock %}

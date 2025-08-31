@@ -9,6 +9,36 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def log_audit(action, resource_type, resource_id=None, details=None, success=True, error_message=None):
+    """Create audit log entry"""
+    try:
+        from models import AuditLog
+        
+        # Ensure details is a dictionary
+        if details is None:
+            details = {}
+        elif isinstance(details, str):
+            details = {'message': details}
+        elif isinstance(details, list):
+            details = {'items': details}
+        elif not isinstance(details, dict):
+            details = {'value': str(details)}
+        
+        audit_log = AuditLog(
+            user=current_user._get_current_object() if current_user.is_authenticated else None,
+            action=action,
+            resource_type=resource_type,
+            resource_id=str(resource_id) if resource_id else None,
+            details=details,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            success=success,
+            error_message=error_message
+        )
+        audit_log.save()
+    except Exception as e:
+        logger.error(f"Failed to create audit log: {str(e)}")
+
 def validate_password_strength(password):
     """
     Validate password strength and return score with feedback
@@ -355,5 +385,147 @@ def template_utils():
     return {
         'format_datetime': format_datetime,
         'get_relative_time': get_relative_time,
-        'mask_sensitive_data': mask_sensitive_data
+        'mask_sensitive_data': mask_sensitive_data,
+        'config': current_app.config
     }
+
+# =====================================================================================
+# TOKEN-BASED KEY ROTATION CLEANUP UTILITIES
+# =====================================================================================
+
+def cleanup_rotation_system():
+    """Cleanup expired and failed tokens"""
+    from models import RotationToken
+    from crypto_utils import atomic_rotation
+    
+    try:
+        # Mark expired tokens
+        expired_tokens = RotationToken.objects(
+            expires_at__lt=datetime.utcnow(),
+            status__in=['pending', 'approved', 'in_progress']
+        )
+        
+        expired_count = 0
+        rollback_count = 0
+        
+        for token in expired_tokens:
+            if token.status == 'in_progress':
+                # Attempt rollback
+                try:
+                    atomic_rotation._rollback_rotation(token)
+                    rollback_count += 1
+                    logger.info(f"Rolled back expired in-progress rotation: {token.id}")
+                except Exception as e:
+                    logger.error(f"Failed to rollback rotation {token.id}: {str(e)}")
+            else:
+                token.status = 'expired'
+                token.save()
+                expired_count += 1
+        
+        # Delete old completed tokens (keep for 30 days)
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+        old_tokens = RotationToken.objects(
+            created_at__lt=cutoff_date,
+            status__in=['completed', 'finalized', 'expired', 'failed']
+        )
+        old_count = old_tokens.count()
+        old_tokens.delete()
+        
+        logger.info(f"Rotation cleanup completed: {expired_count} expired, {rollback_count} rolled back, {old_count} deleted")
+        return {
+            'expired': expired_count,
+            'rolled_back': rollback_count,
+            'deleted': old_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Rotation cleanup failed: {str(e)}")
+        return {'error': str(e)}
+
+def recover_failed_rotations():
+    """Attempt to recover failed rotations"""
+    from models import RotationToken
+    from crypto_utils import atomic_rotation
+    
+    try:
+        failed_tokens = RotationToken.objects(status='in_progress')
+        recovered_count = 0
+        failed_count = 0
+        
+        for token in failed_tokens:
+            try:
+                # Check if rotation can be resumed based on stage
+                if token.rotation_stage in ['created', 'approved', 'dek_generated']:
+                    # Early stage failure - safe to mark as failed
+                    token.status = 'failed'
+                    token.save()
+                    failed_count += 1
+                    logger.info(f"Marked early-stage rotation as failed: {token.id}")
+                else:
+                    # Later stage failure - attempt rollback
+                    atomic_rotation._rollback_rotation(token)
+                    recovered_count += 1
+                    logger.info(f"Recovered failed rotation: {token.id}")
+                    
+            except Exception as e:
+                logger.error(f"Failed to recover rotation {token.id}: {str(e)}")
+                # Mark as failed if recovery fails
+                try:
+                    token.status = 'failed'
+                    token.save()
+                    failed_count += 1
+                except:
+                    pass
+        
+        logger.info(f"Recovery completed: {recovered_count} recovered, {failed_count} marked as failed")
+        return {
+            'recovered': recovered_count,
+            'failed': failed_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Recovery process failed: {str(e)}")
+        return {'error': str(e)}
+
+def get_rotation_system_status():
+    """Get current status of rotation system"""
+    from models import RotationToken
+    
+    try:
+        status = {
+            'pending': RotationToken.objects(status='pending').count(),
+            'approved': RotationToken.objects(status='approved').count(),
+            'in_progress': RotationToken.objects(status='in_progress').count(),
+            'completed': RotationToken.objects(status='completed').count(),
+            'finalized': RotationToken.objects(status='finalized').count(),
+            'failed': RotationToken.objects(status='failed').count(),
+            'expired': RotationToken.objects(status='expired').count(),
+        }
+        
+        # Add expired pending/approved tokens
+        expired_pending = RotationToken.objects(
+            status__in=['pending', 'approved'],
+            expires_at__lt=datetime.utcnow()
+        ).count()
+        
+        status['expired_pending'] = expired_pending
+        status['total'] = sum([v for k, v in status.items() if k != 'expired_pending'])
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"Failed to get rotation system status: {str(e)}")
+        return {'error': str(e)}
+
+def schedule_rotation_cleanup():
+    """Schedule periodic cleanup of rotation tokens"""
+    # This would typically be called from a scheduler like APScheduler or Celery
+    try:
+        cleanup_result = cleanup_rotation_system()
+        recovery_result = recover_failed_rotations()
+        
+        logger.info(f"Scheduled cleanup completed: cleanup={cleanup_result}, recovery={recovery_result}")
+        return True
+    except Exception as e:
+        logger.error(f"Scheduled cleanup failed: {str(e)}")
+        return False

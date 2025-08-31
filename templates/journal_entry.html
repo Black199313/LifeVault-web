@@ -23,7 +23,7 @@
                         <div class="col-md-6">
                             <label for="entry_date" class="form-label">Date *</label>
                             <input type="date" class="form-control" id="entry_date" name="entry_date" 
-                                   value="{{ entry.entry_date if entry else entry_date }}" required>
+                                   value="{{ entry.entry_date.strftime('%Y-%m-%d') if entry else date }}" required>
                         </div>
                         
                         <div class="col-md-6">
@@ -58,17 +58,33 @@
                     </div>
                     
                     <div class="mt-4">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ url_for('journal') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-times me-2"></i>Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>
-                                {% if entry %}Update Entry{% else %}Save Entry{% endif %}
-                            </button>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <div>
+                                {% if entry %}
+                                <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                                    <i class="fas fa-trash me-2"></i>Delete Entry
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('journal') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if entry %}Update Entry{% else %}Save Entry{% endif %}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
+                
+                {% if entry %}
+                <!-- Hidden form for delete operation -->
+                <form id="deleteForm" method="POST" action="{{ url_for('delete_journal_entry', entry_id=entry.id) }}" style="display: none;">
+                    <input type="hidden" name="_method" value="DELETE">
+                </form>
+                {% endif %}
             </div>
         </div>
         
@@ -112,9 +128,18 @@ textarea.addEventListener('input', function() {
     }
 });
 
-// Set default date to today if creating new entry
-if (!document.getElementById('entry_date').value) {
-    document.getElementById('entry_date').value = new Date().toISOString().split('T')[0];
+// Set default date to today only if no date is provided and creating new entry
+const dateInput = document.getElementById('entry_date');
+if (!dateInput.value || dateInput.value === '') {
+    dateInput.value = new Date().toISOString().split('T')[0];
+}
+
+// Delete confirmation function
+function confirmDelete() {
+    const isConfirmed = confirm('Are you sure you want to delete this journal entry? This action cannot be undone.');
+    if (isConfirmed) {
+        document.getElementById('deleteForm').submit();
+    }
 }
 
 // Auto-save draft functionality (optional)

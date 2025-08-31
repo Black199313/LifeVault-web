@@ -89,6 +89,11 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6 col-lg-3">
+                        <a href="{{ url_for('admin_create_user') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-user-plus me-2"></i>Create User
+                        </a>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
                         <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary w-100">
                             <i class="fas fa-users me-2"></i>Manage Users
                         </a>
@@ -99,14 +104,16 @@
                         </a>
                     </div>
                     <div class="col-md-6 col-lg-3">
-                        <button class="btn btn-outline-warning w-100" disabled>
+                        <a href="{{ url_for('admin_key_rotation_management') }}" class="btn btn-outline-warning w-100">
                             <i class="fas fa-sync-alt me-2"></i>Key Rotation
-                        </button>
+                        </a>
                     </div>
                     <div class="col-md-6 col-lg-3">
-                        <button class="btn btn-outline-danger w-100" disabled>
-                            <i class="fas fa-download me-2"></i>System Backup
-                        </button>
+                        <a href="{{ url_for('admin_export_all_data') }}" class="btn btn-outline-danger w-100" id="adminBackupBtn"
+                           data-bs-toggle="tooltip" data-bs-placement="top"
+                           title="Download complete system backup including all users' data, secrets (encrypted), and audit logs">
+                            <i class="fas fa-database me-2"></i>System Backup
+                        </a>
                     </div>
                 </div>
             </div>
@@ -181,4 +188,58 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Handle admin backup button with loading state
+    const adminBackupBtn = document.getElementById('adminBackupBtn');
+    if (adminBackupBtn) {
+        adminBackupBtn.addEventListener('click', function(e) {
+            // Confirm action
+            if (!confirm('This will create a complete system backup of all users\' data. This may take a few moments. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Backup...';
+            this.classList.add('disabled');
+            
+            // Show info message
+            showAlert('Creating complete system backup... Please wait.', 'info');
+            
+            // Reset button after download starts (the browser will handle the download)
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.classList.remove('disabled');
+                showAlert('System backup created! Check your downloads folder.', 'success');
+            }, 3000);
+        });
+    }
+});
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
 {% endblock %}

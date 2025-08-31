@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Journal Entries - Secret Journal Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list me-2"></i>Journal Entries</h2>
+            <div>
+                <a href="{{ url_for('journal') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-calendar me-1"></i>Calendar View
+                </a>
+                <a href="{{ url_for('journal_entry') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>New Entry
+                </a>
+            </div>
+        </div>
+
+        <!-- Search and Filter Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-search me-2"></i>Search & Filter</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('journal_list') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="search" class="form-label">Search in content</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Search your entries...">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="mood" class="form-label">Mood</label>
+                            <select class="form-select" id="mood" name="mood">
+                                <option value="">All moods</option>
+                                {% for mood in moods %}
+                                <option value="{{ mood }}" {% if mood == mood_filter %}selected{% endif %}>
+                                    {{ mood.title() }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="tag" class="form-label">Tag</label>
+                            <select class="form-select" id="tag" name="tag">
+                                <option value="">All tags</option>
+                                {% for tag in tags %}
+                                <option value="{{ tag }}" {% if tag == tag_filter %}selected{% endif %}>
+                                    {{ tag }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="date_from" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from" 
+                                   value="{{ date_from }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="date_to" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to" 
+                                   value="{{ date_to }}">
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Search
+                            </button>
+                            <a href="{{ url_for('journal_list') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="mb-3">
+            <small class="text-muted">
+                Showing {{ entries|length }} of {{ pagination.total }} entries
+                {% if search_query or mood_filter or tag_filter or date_from or date_to %}
+                (filtered)
+                {% endif %}
+            </small>
+        </div>
+
+        <!-- Journal Entries List -->
+        {% if entries %}
+        <div class="row">
+            {% for entry in entries %}
+            <div class="col-12 mb-3">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">
+                                <i class="fas fa-calendar-day me-2"></i>
+                                {{ entry.entry_date.strftime('%A, %B %d, %Y') }}
+                            </h6>
+                            {% if entry.mood %}
+                            <span class="badge mt-1" style="background-color: {{ get_mood_color(entry.mood) }};">
+                                {{ entry.mood.title() }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <a href="{{ url_for('journal_entry', date=entry.entry_date.strftime('%Y-%m-%d')) }}" 
+                               class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="confirmDeleteEntry('{{ entry.id }}', '{{ entry.entry_date.strftime('%Y-%m-%d') }}')">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            {% if entry.content|length > 300 %}
+                                {{ entry.content[:300] }}...
+                                <a href="{{ url_for('journal_entry', date=entry.entry_date.strftime('%Y-%m-%d')) }}" 
+                                   class="text-primary">read more</a>
+                            {% else %}
+                                {{ entry.content }}
+                            {% endif %}
+                        </p>
+                        {% if entry.tags %}
+                        <div class="mt-2">
+                            {% for tag in entry.tags %}
+                            <span class="badge bg-secondary me-1">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.total > pagination.per_page %}
+        <nav aria-label="Journal entries pagination">
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('journal_list', page=pagination.prev_num, 
+                       search=search_query, mood=mood_filter, tag=tag_filter, 
+                       date_from=date_from, date_to=date_to) }}">Previous</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ pagination.page }}</span>
+                </li>
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('journal_list', page=pagination.next_num, 
+                       search=search_query, mood=mood_filter, tag=tag_filter, 
+                       date_from=date_from, date_to=date_to) }}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <!-- No entries found -->
+        <div class="text-center py-5">
+            <i class="fas fa-journal-whills fa-3x text-muted mb-3"></i>
+            <h5>No journal entries found</h5>
+            {% if search_query or mood_filter or tag_filter or date_from or date_to %}
+            <p class="text-muted">Try adjusting your search criteria or 
+               <a href="{{ url_for('journal_list') }}">clear all filters</a>
+            </p>
+            {% else %}
+            <p class="text-muted">Start writing your first journal entry!</p>
+            <a href="{{ url_for('journal_entry') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Your First Entry
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Hidden forms for delete operations -->
+{% for entry in entries %}
+<form id="deleteForm{{ entry.id }}" method="POST" action="{{ url_for('delete_journal_entry', entry_id=entry.id) }}" style="display: none;">
+    <input type="hidden" name="_method" value="DELETE">
+</form>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit form on filter changes
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const selects = form.querySelectorAll('select');
+    const dateInputs = form.querySelectorAll('input[type="date"]');
+    
+    // Auto-submit on select changes
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    // Auto-submit on date changes
+    dateInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    // Search with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            form.submit();
+        }, 1000); // Submit after 1 second of no typing
+    });
+});
+
+// Delete confirmation function
+function confirmDeleteEntry(entryId, entryDate) {
+    const isConfirmed = confirm(`Are you sure you want to delete the journal entry from ${entryDate}? This action cannot be undone.`);
+    if (isConfirmed) {
+        document.getElementById('deleteForm' + entryId).submit();
+    }
+}
+</script>
+{% endblock %}

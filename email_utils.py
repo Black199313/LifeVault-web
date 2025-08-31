@@ -81,14 +81,19 @@ class EmailService:
         """Send recovery code email"""
         template = """
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Account Recovery Code</h2>
+            <h2>Email Recovery Password</h2>
             <p>Hello {{ username }},</p>
-            <p>Your recovery code is:</p>
-            <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; text-align: center; font-size: 24px; font-weight: bold; border-radius: 5px;">
+            <p>Your email recovery password is:</p>
+            <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; text-align: center; font-size: 24px; font-weight: bold; border-radius: 5px; font-family: monospace;">
                 {{ code }}
             </div>
-            <p>This code will expire in 15 minutes.</p>
-            <p>If you didn't request this code, please contact support immediately.</p>
+            <p><strong>Important:</strong></p>
+            <ul>
+                <li>Save this password securely - it does not expire</li>
+                <li>You'll need it to recover your account if you forget your password</li>
+                <li>This password uses only clear characters to avoid confusion</li>
+            </ul>
+            <p>If you didn't request this password, please contact support immediately.</p>
         </div>
         """
         
@@ -99,8 +104,8 @@ class EmailService:
         )
         
         return self.send_email(
-            user.email, 
-            "Account Recovery Code", 
+            user.recovery_email, 
+            "Email Recovery Password - LifeVault", 
             rendered_template
         )
 

@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% set title = "Execute Approved Key Rotation" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-cogs"></i> Execute Approved Rotation</h3>
+                    <p class="mb-0 text-muted">Use your rotation token to execute an approved key rotation.</p>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                                    <h6>Enhanced data protection</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-sync-alt text-info fa-2x mb-2"></i>
+                                    <h6>Fresh encryption keys</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shield-alt text-warning fa-2x mb-2"></i>
+                                    <h6>Improved security posture</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Warning</h5>
+                        <p>This operation will replace your current encryption keys with new ones. Please ensure you have:</p>
+                        <ul class="mb-2">
+                            <li>Your rotation token provided by the administrator</li>
+                            <li>The temporary password sent to you by the administrator</li>
+                            <li>All your current recovery credentials ready</li>
+                        </ul>
+                        <p class="mb-0"><strong>All existing data will be automatically re-encrypted with the new keys.</strong></p>
+                    </div>
+
+                    <form id="keyRotationForm">
+                        <input type="hidden" id="rotation_token" value="{{ token }}">
+                        
+                        <!-- Token and Temporary Password Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-ticket-alt"></i> Rotation Token *</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="token_input" class="form-label">
+                                                <i class="fas fa-key me-1"></i>Rotation Token
+                                            </label>
+                                            <input type="text" class="form-control" id="token_input" 
+                                                   name="token_input" required 
+                                                   placeholder="Enter your rotation token..." 
+                                                   value="{{ token or '' }}">
+                                            <div class="form-text">This token was provided when your rotation request was approved.</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="temporary_password" class="form-label">
+                                                <i class="fas fa-lock me-1"></i>Temporary Password
+                                            </label>
+                                            <input type="password" class="form-control" id="temporary_password" 
+                                                   name="temporary_password" required 
+                                                   placeholder="Enter temporary password...">
+                                            <div class="form-text">The temporary password sent to you by the administrator.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Password Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-user-shield"></i> Current Password *</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            <label for="current_password" class="form-label">
+                                                <i class="fas fa-key me-1"></i>Your Current Password
+                                            </label>
+                                            <input type="password" class="form-control" id="current_password" 
+                                                   name="current_password" required 
+                                                   placeholder="Enter your current password...">
+                                            <div class="form-text">Required to decrypt your data during the rotation process.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recovery Methods Section - Conditional based on user setup -->
+                        <div id="recovery_methods_section">
+                            <!-- This section will be populated dynamically based on user's configured recovery methods -->
+                        </div>
+
+                        <!-- New Password Section (Optional) -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-key"></i> New Password (Optional)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="new_password" class="form-label">
+                                                <i class="fas fa-lock me-1"></i>New Password
+                                            </label>
+                                            <input type="password" class="form-control" id="new_password" 
+                                                   name="new_password" placeholder="Leave blank to keep current password">
+                                            <div class="form-text">Leave empty to keep your current password unchanged</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="confirm_new_password" class="form-label">
+                                                <i class="fas fa-lock me-1"></i>Confirm New Password
+                                            </label>
+                                            <input type="password" class="form-control" id="confirm_new_password" 
+                                                   name="confirm_new_password" placeholder="Confirm new password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confirmation Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-check-square"></i> Confirmation</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirm_rotation" required>
+                                    <label class="form-check-label" for="confirm_rotation">
+                                        I understand that this operation cannot be undone and will rotate all my encryption keys
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirm_credentials" required>
+                                    <label class="form-check-label" for="confirm_credentials">
+                                        I have verified all my credentials are correct
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirm_backup" required>
+                                    <label class="form-check-label" for="confirm_backup">
+                                        I understand that my data will be re-encrypted and I have my recovery methods ready
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Section (Hidden initially) -->
+                        <div id="rotation_progress" class="card mb-4" style="display: none;">
+                            <div class="card-header">
+                                <h5><i class="fas fa-cog fa-spin"></i> Rotation Progress</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress mb-3">
+                                    <div id="progress_bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                         role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div id="progress_status">Initializing rotation...</div>
+                                <div id="progress_details" class="mt-2 text-muted small"></div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="window.history.back()">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button type="submit" class="btn btn-danger" id="execute_rotation">
+                                <i class="fas fa-cogs"></i> Execute Key Rotation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables to track user's configured recovery methods
+let userRecoveryMethods = {};
+let requiredFields = ['token_input', 'temporary_password', 'current_password'];
+
+// Load user's recovery methods configuration on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserRecoveryMethods();
+});
+
+async function loadUserRecoveryMethods() {
+    try {
+        const response = await fetch('/api/user_recovery_methods');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            userRecoveryMethods = result.methods;
+            buildRecoveryMethodsForm();
+        } else {
+            console.error('Failed to load recovery methods:', result.error);
+            // Fallback: assume user has all recovery methods
+            userRecoveryMethods = {
+                has_security_questions: true,
+                has_recovery_phrase: true,
+                has_email_recovery: false,
+                recovery_email: null
+            };
+            buildRecoveryMethodsForm();
+        }
+    } catch (error) {
+        console.error('Error loading recovery methods:', error);
+        // Fallback: assume user has basic recovery methods
+        userRecoveryMethods = {
+            has_security_questions: true,
+            has_recovery_phrase: true,
+            has_email_recovery: false,
+            recovery_email: null
+        };
+        buildRecoveryMethodsForm();
+    }
+}
+
+function buildRecoveryMethodsForm() {
+    const container = document.getElementById('recovery_methods_section');
+    let html = '';
+    
+    // Security Questions (Q-DEK)
+    if (userRecoveryMethods.has_security_questions) {
+        html += `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-question-circle"></i> Security Questions *</h5>
+                    <p class="mb-0 text-muted small">Required - You have security questions configured</p>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer1" class="form-label">Answer 1</label>
+                                <input type="text" class="form-control" id="answer1" 
+                                       name="answer1" required placeholder="Enter your first answer">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer2" class="form-label">Answer 2</label>
+                                <input type="text" class="form-control" id="answer2" 
+                                       name="answer2" required placeholder="Enter your second answer">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="answer3" class="form-label">Answer 3</label>
+                                <input type="text" class="form-control" id="answer3" 
+                                       name="answer3" required placeholder="Enter your third answer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('answer1', 'answer2', 'answer3');
+    }
+    
+    // Recovery Phrase (R-DEK)
+    if (userRecoveryMethods.has_recovery_phrase) {
+        html += `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-alt"></i> Recovery Phrase *</h5>
+                    <p class="mb-0 text-muted small">Required - You have a recovery phrase configured</p>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="recovery_phrase" class="form-label">
+                            <i class="fas fa-scroll me-1"></i>12-Word Recovery Phrase
+                        </label>
+                        <textarea class="form-control" id="recovery_phrase" name="recovery_phrase" 
+                                 rows="3" required placeholder="Enter your 12-word recovery phrase separated by spaces"></textarea>
+                        <div class="form-text">Enter all 12 words separated by spaces</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('recovery_phrase');
+    }
+    
+    // Email Recovery (E-DEK)
+    if (userRecoveryMethods.has_email_recovery) {
+        html += `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-envelope"></i> Email Recovery Password *</h5>
+                    <p class="mb-0 text-muted small">Required - You have email recovery configured for: ${userRecoveryMethods.recovery_email}</p>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="email_password" class="form-label">
+                            <i class="fas fa-key me-1"></i>Email Recovery Password
+                        </label>
+                        <input type="text" class="form-control" id="email_password" 
+                               name="email_password" required 
+                               placeholder="Enter the password that was sent to your recovery email">
+                        <div class="form-text">
+                            This is the permanent password that was emailed to ${userRecoveryMethods.recovery_email} when you set up email recovery.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        requiredFields.push('email_password');
+    }
+    
+    // If no recovery methods are configured, show a warning
+    if (!userRecoveryMethods.has_security_questions && !userRecoveryMethods.has_recovery_phrase && !userRecoveryMethods.has_email_recovery) {
+        html += `
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle"></i> No Additional Recovery Methods</h6>
+                <p class="mb-0">You don't have any additional recovery methods configured. Only your password and admin recovery will be rotated.</p>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+document.getElementById('keyRotationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+        return;
+    }
+    
+    // Show confirmation dialog
+    if (!confirm('Are you absolutely sure you want to proceed with key rotation? This cannot be undone!')) {
+        return;
+    }
+    
+    // Collect form data
+    const formData = {
+        token: document.getElementById('token_input').value,
+        current_password: document.getElementById('current_password').value,
+        temporary_password: document.getElementById('temporary_password').value,
+        new_password: document.getElementById('new_password').value || undefined
+    };
+    
+    // Add recovery method data if they exist
+    if (userRecoveryMethods.has_security_questions) {
+        formData.security_answers = [
+            document.getElementById('answer1').value,
+            document.getElementById('answer2').value,
+            document.getElementById('answer3').value
+        ];
+    }
+    
+    if (userRecoveryMethods.has_recovery_phrase) {
+        formData.recovery_phrase = document.getElementById('recovery_phrase').value.trim();
+    }
+    
+    if (userRecoveryMethods.has_email_recovery) {
+        formData.email_password = document.getElementById('email_password').value;
+    }
+    
+    // Show progress
+    showProgress();
+    updateProgress(5, 'Validating rotation token...', 'Checking token validity and temporary password');
+    
+    try {
+        const response = await fetch('/api/rotate_keys_with_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        updateProgress(25, 'Validating credentials...', 'Verifying all provided credentials');
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateProgress(50, 'Generating new encryption keys...', 'Creating fresh encryption keys');
+            
+            setTimeout(() => {
+                updateProgress(75, 'Re-encrypting your data...', 'Applying new keys to all your secrets');
+            }, 1000);
+            
+            setTimeout(() => {
+                updateProgress(90, 'Finalizing rotation...', 'Completing the key rotation process');
+            }, 2000);
+            
+            setTimeout(() => {
+                updateProgress(100, 'Key rotation completed successfully!', 'All encryption keys have been rotated');
+                
+                // Clear any stored tokens
+                sessionStorage.removeItem('rotation_token');
+                sessionStorage.removeItem('rotation_request_id');
+                
+                setTimeout(() => {
+                    alert('✅ Key rotation completed successfully! All your encryption keys have been updated. You will be redirected to the dashboard.');
+                    window.location.href = '/dashboard';
+                }, 2000);
+            }, 3000);
+            
+        } else {
+            hideProgress();
+            alert('❌ Error: ' + result.error);
+        }
+    } catch (error) {
+        hideProgress();
+        console.error('Rotation failed:', error);
+        alert('❌ Failed to execute key rotation. Please check your connection and try again, or contact your administrator.');
+    }
+});
+
+function validateForm() {
+    // Check all required fields
+    for (const field of requiredFields) {
+        const element = document.getElementById(field);
+        if (!element || !element.value.trim()) {
+            alert(`Please fill in the ${field.replace('_', ' ')} field.`);
+            element?.focus();
+            return false;
+        }
+    }
+    
+    // Check new password confirmation if provided
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_new_password').value;
+    if (newPassword && newPassword !== confirmPassword) {
+        alert('New password and confirmation do not match.');
+        document.getElementById('confirm_new_password').focus();
+        return false;
+    }
+    
+    // Check recovery phrase word count if provided
+    if (userRecoveryMethods.has_recovery_phrase) {
+        const recoveryPhrase = document.getElementById('recovery_phrase').value.trim();
+        const words = recoveryPhrase.split(/\s+/).filter(word => word.length > 0);
+        if (words.length !== 12) {
+            alert('Recovery phrase must contain exactly 12 words.');
+            document.getElementById('recovery_phrase').focus();
+            return false;
+        }
+    }
+    
+    // Check all confirmations
+    const confirmations = ['confirm_rotation', 'confirm_credentials', 'confirm_backup'];
+    for (const confirmId of confirmations) {
+        if (!document.getElementById(confirmId).checked) {
+            alert('Please confirm all checkboxes to proceed.');
+            document.getElementById(confirmId).focus();
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function showProgress() {
+    document.getElementById('rotation_progress').style.display = 'block';
+    document.getElementById('execute_rotation').disabled = true;
+    document.getElementById('execute_rotation').innerHTML = '<i class="fas fa-cog fa-spin"></i> Processing...';
+    
+    // Scroll to progress section
+    document.getElementById('rotation_progress').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideProgress() {
+    document.getElementById('rotation_progress').style.display = 'none';
+    document.getElementById('execute_rotation').disabled = false;
+    document.getElementById('execute_rotation').innerHTML = '<i class="fas fa-cogs"></i> Execute Key Rotation';
+}
+
+function updateProgress(percent, status, details = '') {
+    document.getElementById('progress_bar').style.width = percent + '%';
+    document.getElementById('progress_status').textContent = status;
+    document.getElementById('progress_details').textContent = details;
+}
+</script>
+{% endblock %}

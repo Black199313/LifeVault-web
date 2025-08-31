@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% set title = "Request Key Rotation" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-sync-alt"></i> Request Key Rotation</h3>
+                </div>
+                <div class="card-body">
+                    {% if existing_request %}
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle"></i> Existing Request</h5>
+                            <p>You have a pending key rotation request:</p>
+                            <ul>
+                                <li><strong>Status:</strong> {{ existing_request.status.title() }}</li>
+                                <li><strong>Requested:</strong> {{ existing_request.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
+                                <li><strong>Expires:</strong> {{ existing_request.expires_at.strftime('%Y-%m-%d %H:%M') }}</li>
+                                {% if existing_request.request_reason %}
+                                <li><strong>Reason:</strong> {{ existing_request.request_reason }}</li>
+                                {% endif %}
+                            </ul>
+                            {% if existing_request.status == 'approved' %}
+                                <div class="mt-3">
+                                    <button class="btn btn-success" onclick="checkRotationStatus()">
+                                        <i class="fas fa-check"></i> Check Status & Proceed
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-plus-circle"></i> Create New Request</h6>
+                            <p>You can submit additional key rotation requests if needed. Each request will be processed separately by the admin.</p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Important Information</h5>
+                            <p>Key rotation is a security-critical operation that:</p>
+                            <ul>
+                                <li>Requires admin approval before execution</li>
+                                <li>Will generate new encryption keys for all your data</li>
+                                <li>Requires you to provide all current credentials during execution</li>
+                                <li>Cannot be undone once completed</li>
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form id="rotationRequestForm">
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Key Rotation</label>
+                            <select class="form-select" id="reason" name="reason" required>
+                                <option value="">Select a reason...</option>
+                                <option value="Regular security rotation">Regular security rotation</option>
+                                <option value="Suspected compromise">Suspected compromise</option>
+                                <option value="Password forgotten">Password forgotten</option>
+                                <option value="Security policy compliance">Security policy compliance</option>
+                                <option value="Other">Other (specify below)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="additional_reason" class="form-label">Additional Details (Optional)</label>
+                            <textarea class="form-control" id="additional_reason" name="additional_reason" 
+                                     rows="3" placeholder="Provide any additional context for your request..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-clock"></i> Process Overview</h6>
+                            <ol>
+                                <li>Submit this request</li>
+                                <li>Wait for admin approval (you'll be notified)</li>
+                                <li>Once approved, complete the rotation with all your credentials</li>
+                                <li>Admin will finalize the process</li>
+                            </ol>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary me-md-2" onclick="window.history.back()">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit {% if existing_request %}New {% endif %}Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('rotationRequestForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const reasonSelect = document.getElementById('reason');
+    const additionalReason = document.getElementById('additional_reason');
+    
+    let reason = reasonSelect.value;
+    if (reason === 'Other' && additionalReason.value.trim()) {
+        reason = additionalReason.value.trim();
+    } else if (reason === 'Other') {
+        alert('Please specify the reason in the additional details field.');
+        return;
+    }
+    
+    if (!reason) {
+        alert('Please select a reason for key rotation.');
+        return;
+    }
+    
+    // Disable form during submission
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    
+    try {
+        const response = await fetch('/api/request_key_rotation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                reason: reason
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Store token for later use
+            sessionStorage.setItem('rotation_token', result.token);
+            sessionStorage.setItem('rotation_request_id', result.request_id);
+            
+            // Show success message and reload page
+            alert('Key rotation request submitted successfully! You will be notified when approved.');
+            window.location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Request failed:', error);
+        alert('Failed to submit request. Please try again.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+});
+
+function checkRotationStatus() {
+    // Check if we have a stored token for approved request
+    const token = sessionStorage.getItem('rotation_token');
+    if (token) {
+        window.location.href = '/key_rotation_with_token?token=' + encodeURIComponent(token);
+    } else {
+        alert('Rotation token not found. Please contact admin for the temporary password.');
+    }
+}
+</script>
+{% endblock %}

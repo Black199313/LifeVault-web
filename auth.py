@@ -5,15 +5,37 @@ from datetime import datetime, timedelta
 from flask import current_app
 from werkzeug.security import generate_password_hash
 from models import User, RecoveryToken
-from app import db
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Dummy db object for compatibility during migration
+class DummyDB:
+    class session:
+        @staticmethod
+        def add(obj):
+            if hasattr(obj, 'save'):
+                obj.save()
+        
+        @staticmethod
+        def commit():
+            pass
+        
+        @staticmethod
+        def rollback():
+            pass
+        
+        @staticmethod
+        def delete(obj):
+            if hasattr(obj, 'delete'):
+                obj.delete()
+
+db = DummyDB()
+
 def create_admin_user():
     """Create default admin user if none exists"""
     try:
-        admin = User.query.filter_by(is_admin=True).first()
+        admin = User.objects(is_admin=True).first()
         if not admin:
             # Create admin user with default credentials
             admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
@@ -30,8 +52,7 @@ def create_admin_user():
                 created_at=datetime.utcnow()
             )
             
-            db.session.add(admin_user)
-            db.session.commit()
+            admin_user.save()
             
             logger.info(f"Created admin user: {admin_username}")
             
@@ -52,12 +73,11 @@ def create_admin_user():
                 )
                 
                 admin_keys = UserKeys(
-                    user_id=admin_user.id,
+                    user=admin_user,
                     **five_keys
                 )
                 
-                db.session.add(admin_keys)
-                db.session.commit()
+                admin_keys.save()
                 
                 logger.info("Created admin encryption keys")
                 
@@ -66,27 +86,25 @@ def create_admin_user():
                 
     except Exception as e:
         logger.error(f"Failed to create admin user: {str(e)}")
-        db.session.rollback()
 
 def create_email_verification_token(user):
     """Create email verification token"""
     token = generate_secure_token()
     
     verification_token = RecoveryToken(
-        user_id=user.id,
+        user=user,
         token=token,
         token_type='email_verify',
         expires_at=datetime.utcnow() + timedelta(days=1)
     )
     
-    db.session.add(verification_token)
-    db.session.commit()
+    verification_token.save()
     
     return token
 
 def verify_email_token(token):
     """Verify email verification token"""
-    recovery_token = RecoveryToken.query.filter_by(
+    recovery_token = RecoveryToken.objects(
         token=token,
         used=False,
         token_type='email_verify'
@@ -97,7 +115,7 @@ def verify_email_token(token):
     
     # Mark token as used
     recovery_token.used = True
-    db.session.commit()
+    recovery_token.save()
     
     return recovery_token.user
 

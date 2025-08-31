@@ -1,0 +1,37 @@
+
+# Add this to your login route after successful login:
+
+# Check if user has data that needs migration
+user_secrets = SecretData.objects(user=current_user, needs_migration=True)
+if user_secrets:
+    try:
+        # User just logged in, so we have their password
+        # Get the real DEK from session (already stored during login)
+        if 'user_dek' in session:
+            session_dek = bytes.fromhex(session['user_dek'])
+            old_key = crypto_manager.derive_key_from_user_id(str(current_user.id))
+            
+            migrated_count = 0
+            for secret in user_secrets:
+                try:
+                    # Decrypt with old key
+                    old_content = crypto_manager.decrypt_data(secret.encrypted_content, old_key)
+                    
+                    # Re-encrypt with new DEK
+                    new_content = crypto_manager.encrypt_data(old_content, session_dek)
+                    
+                    # Update the secret
+                    secret.encrypted_content = new_content
+                    secret.needs_migration = False
+                    secret.save()
+                    
+                    migrated_count += 1
+                    
+                except Exception as e:
+                    logger.error(f"Failed to migrate secret {secret.id}: {str(e)}")
+            
+            if migrated_count > 0:
+                flash(f'Successfully migrated {migrated_count} secrets to new encryption!', 'success')
+                
+    except Exception as e:
+        logger.error(f"Migration error: {str(e)}")
