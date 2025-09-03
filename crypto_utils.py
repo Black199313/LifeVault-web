@@ -535,12 +535,8 @@ class CryptoManager:
             print(f"✅ DEK recovered for E-DEK creation")
             
             # Step 2: Generate a random email password with unambiguous characters
-            import secrets
-            import string
-            # Use only unambiguous characters to avoid confusion
-            # Excluded: 0, O, I, l, 1 (confusing characters)
-            alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-            email_password = ''.join(secrets.choice(alphabet) for _ in range(16))
+            from utils import generate_user_friendly_password
+            email_password = generate_user_friendly_password(16)
             print(f"✅ Email password generated with unambiguous characters, length: {len(email_password)}")
             
             # Step 3: Create E-DEK by encrypting DEK with email password

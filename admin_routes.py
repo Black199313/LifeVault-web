@@ -418,8 +418,9 @@ def register_admin_routes(app):
             if token.status != 'pending':
                 return jsonify({'error': 'Token already processed'}), 400
                 
-            # Generate temporary password
-            temp_password = secrets.token_urlsafe(16)
+            # Generate temporary password with user-friendly characters
+            from utils import generate_user_friendly_password
+            temp_password = generate_user_friendly_password(16)
             temp_hash = hashlib.sha256(temp_password.encode()).hexdigest()
             
             # Update token

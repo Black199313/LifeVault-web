@@ -99,6 +99,16 @@ def generate_secure_token(length=32):
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
+def generate_user_friendly_password(length=16):
+    """Generate a user-friendly password excluding confusing characters but including special characters"""
+    # Exclude confusing characters: 0, O, I, l, 1, i
+    # Include safe special characters that are easy to type and distinguish
+    letters = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'
+    numbers = '23456789'
+    special_chars = '!@#$%^&*+-=?'  # Common, easy-to-type special characters
+    alphabet = letters + numbers + special_chars
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
 def generate_verification_code(length=6):
     """Generate a numeric verification code"""
     return ''.join(secrets.choice(string.digits) for _ in range(length))
