@@ -137,6 +137,155 @@
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>
     
+    <!-- Auto-logout on browser tab close -->
+    {% if current_user.is_authenticated %}
+    <script>
+    // Auto-logout functionality for tab close detection
+    let logoutSent = false;
+    let isNavigating = false;
+    let isFormSubmitting = false;
+    let isRefreshing = false;
+    
+    // Track internal navigation to avoid false tab close detection
+    document.addEventListener('submit', function() {
+        isFormSubmitting = true;
+        setTimeout(() => { isFormSubmitting = false; }, 1000);
+    });
+    
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a');
+        if (target && target.href) {
+            // Check if it's internal navigation
+            if (target.href.startsWith(window.location.origin) || target.href.startsWith('/')) {
+                isNavigating = true;
+                setTimeout(() => { isNavigating = false; }, 500);
+            }
+        }
+    });
+    
+    // Detect page refresh (F5, Ctrl+R)
+    document.addEventListener('keydown', function(e) {
+        if ((e.key === 'F5') || (e.ctrlKey && e.key === 'r')) {
+            isRefreshing = true;
+        }
+    });
+    
+    // Send logout request specifically for tab close
+    function sendTabCloseLogout() {
+        if (logoutSent || isNavigating || isFormSubmitting || isRefreshing) {
+            return;
+        }
+        
+        logoutSent = true;
+        console.log('Tab close detected - sending logout request');
+        
+        // Use sendBeacon for reliable delivery during tab close
+        if (navigator.sendBeacon) {
+            const formData = new FormData();
+            formData.append('logout_type', 'tab_close');
+            navigator.sendBeacon('{{ url_for("browser_close_logout") }}', formData);
+        } else {
+            // Fallback for older browsers
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '{{ url_for("browser_close_logout") }}', false);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send(JSON.stringify({logout_type: 'tab_close'}));
+            } catch (e) {
+                console.log('Failed to send tab close logout:', e);
+            }
+        }
+    }
+    
+    // Primary tab close detection - more reliable than beforeunload
+    window.addEventListener('pagehide', function(e) {
+        // Only trigger if the page is being permanently unloaded (tab close)
+        // e.persisted will be false for tab close, true for back/forward cache
+        if (!e.persisted && !isNavigating && !isFormSubmitting && !isRefreshing) {
+            sendTabCloseLogout();
+        }
+    });
+    
+    // Secondary detection for older browsers
+    window.addEventListener('beforeunload', function(e) {
+        // Only trigger if we're not navigating within the app
+        if (!isNavigating && !isFormSubmitting && !isRefreshing) {
+            // Don't show confirmation dialog, just send logout
+            sendTabCloseLogout();
+        }
+    });
+    
+    // Handle browser tab visibility for extended absence
+    let tabHiddenTime = 0;
+    let tabVisibilityTimeout = null;
+    
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            tabHiddenTime = Date.now();
+            
+            // Set a timeout for extended tab hiding (30 minutes)
+            tabVisibilityTimeout = setTimeout(function() {
+                if (document.visibilityState === 'hidden') {
+                    console.log('Tab hidden for 30 minutes - logging out');
+                    window.location.href = '{{ url_for("logout") }}';
+                }
+            }, 30 * 60 * 1000); // 30 minutes
+            
+        } else if (document.visibilityState === 'visible') {
+            // Clear the timeout when tab becomes visible again
+            if (tabVisibilityTimeout) {
+                clearTimeout(tabVisibilityTimeout);
+                tabVisibilityTimeout = null;
+            }
+            
+            // Check if tab was hidden for a very long time
+            if (tabHiddenTime) {
+                const timeHidden = Date.now() - tabHiddenTime;
+                if (timeHidden > 60 * 60 * 1000) { // 1 hour
+                    // Verify session is still valid after long absence
+                    fetch('{{ url_for("check_session") }}', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    }).then(response => {
+                        if (!response.ok) {
+                            window.location.href = '{{ url_for("login") }}';
+                        }
+                    }).catch(() => {
+                        // Network error - don't logout, might be temporary
+                    });
+                }
+                tabHiddenTime = 0;
+            }
+        }
+    });
+    
+    // Periodic session validation (every 10 minutes)
+    setInterval(function() {
+        // Only check if tab is visible to avoid unnecessary requests
+        if (document.visibilityState === 'visible') {
+            fetch('{{ url_for("check_session") }}', {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(response => {
+                if (!response.ok || response.redirected) {
+                    console.log('Session expired - redirecting to login');
+                    window.location.href = '{{ url_for("login") }}';
+                }
+            }).catch(e => {
+                // Network error - don't logout automatically
+                console.log('Session check failed (network error):', e);
+            });
+        }
+    }, 10 * 60 * 1000); // Check every 10 minutes
+    
+    // Handle page unload warning for unsaved changes (optional)
+    window.addEventListener('beforeunload', function(e) {
+        // You can add logic here to warn about unsaved changes
+        // For now, we'll let the tab close normally
+    });
+    </script>
+    {% endif %}
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

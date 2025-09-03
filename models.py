@@ -33,6 +33,9 @@ class User(UserMixin, Document):
     # Timestamps
     created_at = fields.DateTimeField(default=datetime.utcnow)
     last_login = fields.DateTimeField()
+    last_activity = fields.DateTimeField()
+    last_logout = fields.DateTimeField()
+    server_restart_at = fields.DateTimeField()  # Track server restarts for session invalidation
     password_changed_at = fields.DateTimeField(default=datetime.utcnow)
     
     meta = {

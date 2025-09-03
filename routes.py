@@ -803,6 +803,9 @@ def login():
                     
                     login_user(user)
                     user.last_login = datetime.utcnow()
+                    user.last_activity = datetime.utcnow()
+                    user.last_logout = None  # Clear any previous logout
+                    user.server_restart_at = None  # Clear server restart marker
                     user.save()
                     
                     log_audit('user_login', 'auth', user.id)
@@ -834,6 +837,126 @@ def logout():
     logout_user()
     flash('You have been logged out successfully!', 'info')
     return redirect(url_for('index'))
+
+@app.route('/api/browser_close_logout', methods=['POST'])
+@login_required
+def browser_close_logout():
+    """Handle logout when browser tab is closed or page is unloaded"""
+    try:
+        # Get logout type from request
+        logout_type = 'tab_close'
+        if request.is_json:
+            data = request.get_json() or {}
+            logout_type = data.get('logout_type', 'tab_close')
+        elif request.form:
+            logout_type = request.form.get('logout_type', 'tab_close')
+        
+        # Log the tab close logout
+        log_audit('tab_close_logout', 'auth', current_user.id, {
+            'logout_type': logout_type,
+            'user_agent': request.headers.get('User-Agent', ''),
+            'ip_address': request.remote_addr
+        })
+        
+        # Update user's last logout time
+        current_user.last_logout = datetime.utcnow()
+        current_user.save()
+        
+        # Clear DEK from session for security
+        if 'user_dek' in session:
+            del session['user_dek']
+            print(f"✅ DEK cleared from session for user {current_user.username} (tab close)")
+        
+        # Remove from active sessions
+        session_id = session.get('_id', getattr(session, 'sid', None))
+        if session_id and hasattr(app, 'active_sessions'):
+            try:
+                app.active_sessions.discard(session_id)
+            except:
+                pass
+        
+        # Logout the user
+        logout_user()
+        
+        return jsonify({'success': True, 'message': f'Logged out due to {logout_type}'})
+    except Exception as e:
+        print(f"Error in tab close logout: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/check_session')
+@login_required
+def check_session():
+    """Check if user session is still valid"""
+    try:
+        # Check for server restart invalidation
+        import os
+        if os.path.exists('.server_restart_time'):
+            with open('.server_restart_time', 'r') as f:
+                restart_time_str = f.read().strip()
+                restart_time = datetime.fromisoformat(restart_time_str)
+                
+                # If user logged in before the server restart, session is invalid
+                if current_user.last_login and current_user.last_login < restart_time:
+                    logout_user()
+                    session.clear()
+                    return jsonify({'success': False, 'error': 'Session invalidated by server restart', 'redirect': url_for('login')}), 401
+        
+        # Check if user was logged out due to server restart
+        if (current_user.server_restart_at and 
+            current_user.last_login and 
+            current_user.server_restart_at > current_user.last_login):
+            logout_user()
+            session.clear()
+            return jsonify({'success': False, 'error': 'Session invalidated by server restart', 'redirect': url_for('login')}), 401
+        
+        # Update last activity time
+        current_user.last_activity = datetime.utcnow()
+        current_user.save()
+        return jsonify({'success': True, 'user': current_user.username})
+    except Exception as e:
+        return jsonify({'success': False, 'error': 'Session invalid'}), 401
+
+@app.route('/api/force_session_check')
+def force_session_check():
+    """Force check all sessions for validity - useful for testing restart logout"""
+    try:
+        import os
+        from datetime import datetime
+        
+        if not os.path.exists('.server_restart_time'):
+            return jsonify({'message': 'No server restart marker found'})
+            
+        with open('.server_restart_time', 'r') as f:
+            restart_time_str = f.read().strip()
+            restart_time = datetime.fromisoformat(restart_time_str)
+        
+        # If user is logged in, check if session should be invalidated
+        if current_user.is_authenticated:
+            if current_user.last_login and current_user.last_login < restart_time:
+                logout_user()
+                session.clear()
+                return jsonify({
+                    'message': 'Session invalidated',
+                    'reason': 'User logged in before server restart',
+                    'user_login': current_user.last_login.isoformat(),
+                    'server_restart': restart_time_str,
+                    'redirect': url_for('login')
+                })
+            else:
+                return jsonify({
+                    'message': 'Session valid',
+                    'user': current_user.username,
+                    'user_login': current_user.last_login.isoformat() if current_user.last_login else None,
+                    'server_restart': restart_time_str
+                })
+        else:
+            return jsonify({
+                'message': 'No user logged in',
+                'server_restart': restart_time_str
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/force_password_change', methods=['GET', 'POST'])
 def force_password_change():
