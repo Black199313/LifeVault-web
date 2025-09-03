@@ -729,7 +729,7 @@ def register_admin_routes(app):
                     })
                 
                 # Export recent audit logs for this user (last 100 entries)
-                user_audit_logs = AuditLog.objects(user_id=str(user.id)).order_by('-timestamp').limit(100)
+                user_audit_logs = AuditLog.objects(user=user).order_by('-timestamp').limit(100)
                 for log in user_audit_logs:
                     user_data['audit_logs'].append({
                         'id': str(log.id),
@@ -761,7 +761,7 @@ def register_admin_routes(app):
                     'action': log.action,
                     'resource_type': log.resource_type,
                     'resource_id': log.resource_id,
-                    'user_id': log.user_id,
+                    'user_id': str(log.user.id) if log.user else None,
                     'details': log.details,
                     'ip_address': log.ip_address,
                     'user_agent': log.user_agent,
