@@ -200,9 +200,9 @@ function displayRequests(requests) {
     }
     
     let html = `
-        <div class="table-responsive">
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
             <table class="table table-striped">
-                <thead>
+                <thead class="sticky-top bg-white">
                     <tr>
                         <th>User</th>
                         <th>Reason</th>
