@@ -443,6 +443,9 @@ def setup_recovery():
             
             # Update user with recovery data
             user.recovery_email = recovery_email
+            # ✅ NEW: Also update the main email to match the recovery email if recovery email is provided
+            if recovery_email:
+                user.email = recovery_email
             user.security_questions = security_questions
             user.recovery_phrase = crypto_manager.encrypt_with_password(
                 recovery_phrase, user_password
@@ -557,7 +560,11 @@ def update_recovery():
             # Update recovery email if provided
             if recovery_email and recovery_email != user.recovery_email:
                 old_email = user.recovery_email
+                old_main_email = user.email
                 user.recovery_email = recovery_email
+                
+                # ✅ NEW: Also update the main email to match the recovery email
+                user.email = recovery_email
                 
                 # Create or update E-DEK when recovery email is added/changed (Requirement 18)
                 if recovery_email and password:  # Setting up new email recovery - need password
@@ -577,55 +584,37 @@ def update_recovery():
                             else:
                                 print(f"❌ E-DEK not found in database after save!")
                             
-                            # Send email password to new recovery email (with timeout protection)
+                            # Send email password to new recovery email
                             from email_utils import email_service
                             
                             print("🔄 Attempting to send recovery email...")
                             try:
-                                # Set a shorter timeout for email to prevent hanging
-                                import threading
-                                import time
+                                # Use the fixed email service directly (it has built-in timeout handling)
+                                email_sent = email_service.send_recovery_code_email(user, email_password)
                                 
-                                email_result = [False]
-                                
-                                def send_email_thread():
-                                    try:
-                                        email_result[0] = email_service.send_recovery_code_email(user, email_password)
-                                    except:
-                                        pass  # Timeout will handle this
-                                
-                                # Try sending email with 5-second timeout
-                                thread = threading.Thread(target=send_email_thread)
-                                thread.daemon = True
-                                thread.start()
-                                thread.join(timeout=5)  # 5 second timeout
-                                
-                                if thread.is_alive():
-                                    print("⚠️ Email sending timed out after 5 seconds")
-                                    flash(f'Recovery email updated and E-DEK created! Email sending timed out - your recovery password is: {email_password}', 'warning')
-                                elif email_result[0]:
+                                if email_sent:
                                     print("✅ Email sent successfully")
-                                    flash(f'Recovery email updated and E-DEK password sent to {recovery_email}!', 'success')
+                                    flash(f'Email and recovery email updated to {recovery_email} and E-DEK password sent!', 'success')
                                 else:
                                     print("❌ Email sending failed")
-                                    flash(f'Recovery email updated and E-DEK created! Email failed - your recovery password is: {email_password}', 'warning')
+                                    flash(f'Email and recovery email updated to {recovery_email} and E-DEK created! Email failed - your recovery password is: {email_password}', 'warning')
                                     
                             except Exception as email_error:
                                 print(f"❌ Email error: {str(email_error)}")
-                                flash(f'Recovery email updated and E-DEK created! Email error - your recovery password is: {email_password}', 'warning')
+                                flash(f'Email and recovery email updated to {recovery_email} and E-DEK created! Email error - your recovery password is: {email_password}', 'warning')
                         except Exception as e:
-                            flash(f'Recovery email updated but E-DEK setup failed: {str(e)}', 'warning')
+                            flash(f'Email and recovery email updated to {recovery_email} but E-DEK setup failed: {str(e)}', 'warning')
                             logger.error(f"E-DEK setup failed during email update: {str(e)}")
                 elif recovery_email and not password:
                     # Check if user is ONLY updating security questions and NOT changing email
                     if update_questions and not update_phrase:
                         # Allow email update without password if only updating security questions
-                        flash('Recovery email updated successfully (without E-DEK setup)!', 'info')
+                        flash(f'Email and recovery email updated to {recovery_email} successfully (without E-DEK setup)!', 'info')
                     else:
                         flash('Password is required to set up email recovery. Please enter your current password.', 'error')
                         return render_template('update_recovery.html', user=user)
                 else:
-                    flash('Recovery email updated successfully!', 'success')
+                    flash(f'Email and recovery email updated to {recovery_email} successfully!', 'success')
             
             # Update security questions if requested
             if update_questions:

@@ -53,7 +53,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">Users</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin_key_rotation_management') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('key_rotation_management') }}">
                                 <i class="fas fa-sync-alt me-1"></i>Key Rotation
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('admin_audit') }}">Audit Logs</a></li>
@@ -73,7 +73,9 @@
                             <i class="fas fa-user me-1"></i>{{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">
+                                <i class="fas fa-user me-1"></i>Profile
+                            </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('key_rotation') }}">
                                 <i class="fas fa-sync-alt me-1"></i>Key Rotation
                             </a></li>
@@ -81,7 +83,9 @@
                                 <i class="fas fa-download me-1"></i>Export Data
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a></li>
                         </ul>
                     </li>
                     {% else %}

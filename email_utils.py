@@ -2,16 +2,27 @@ from flask import current_app, url_for, render_template_string
 from flask_mail import Message
 from app import mail
 import logging
+import smtplib
+import socket
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 class EmailService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
     
     def send_email(self, to_email, subject, template, **kwargs):
-        """Send email using Flask-Mail with timeout protection"""
+        """Send email using direct SMTP with timeout protection"""
         try:
-            import signal
             import threading
+            
+            # Get SMTP configuration from current app BEFORE threading
+            server = current_app.config.get('MAIL_SERVER', 'smtp-relay.brevo.com')
+            port = current_app.config.get('MAIL_PORT', 587)
+            username = current_app.config.get('MAIL_USERNAME')
+            password = current_app.config.get('MAIL_PASSWORD')
+            sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+            use_tls = current_app.config.get('MAIL_USE_TLS', True)
             
             # Set up timeout for email sending
             email_result = [False]  # Use list to modify in nested function
@@ -19,13 +30,25 @@ class EmailService:
             
             def send_email_thread():
                 try:
-                    msg = Message(
-                        subject=subject,
-                        recipients=[to_email],
-                        html=template,
-                        sender=current_app.config['MAIL_DEFAULT_SENDER']
-                    )
-                    mail.send(msg)
+                    # Create email message
+                    msg = MIMEMultipart('alternative')
+                    msg['Subject'] = subject
+                    msg['From'] = sender
+                    msg['To'] = to_email
+                    
+                    # Attach HTML content
+                    html_part = MIMEText(template, 'html')
+                    msg.attach(html_part)
+                    
+                    # Send email using direct SMTP
+                    socket.setdefaulttimeout(15)
+                    with smtplib.SMTP(server, port, timeout=15) as smtp:
+                        if use_tls:
+                            smtp.starttls()
+                        if username and password:
+                            smtp.login(username, password)
+                        smtp.send_message(msg)
+                    
                     email_result[0] = True
                     self.logger.info(f"Email sent successfully to {to_email}")
                 except Exception as e:
@@ -36,10 +59,10 @@ class EmailService:
             thread = threading.Thread(target=send_email_thread)
             thread.daemon = True
             thread.start()
-            thread.join(timeout=10)  # 10 second timeout
+            thread.join(timeout=15)  # 15 second timeout
             
             if thread.is_alive():
-                self.logger.error(f"Email sending timed out after 10 seconds to {to_email}")
+                self.logger.error(f"Email sending timed out after 15 seconds to {to_email}")
                 return False
             
             if email_error[0]:

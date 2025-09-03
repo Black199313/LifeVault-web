@@ -16,18 +16,19 @@
             <!-- Recovery Email -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5><i class="fas fa-envelope me-2"></i>Recovery Email</h5>
+                    <h5><i class="fas fa-envelope me-2"></i>Email Address</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="recovery_email" class="form-label">Email Address</label>
                         <input type="email" class="form-control" id="recovery_email" name="recovery_email" 
                                value="{{ user.recovery_email or '' }}" 
-                               placeholder="Enter recovery email address">
+                               placeholder="Enter email address">
                         <div class="form-text">
+                            <strong>Note:</strong> This will update both your main email address and recovery email to the same address.
                             This email will be used for account recovery notifications.
                             {% if not user.recovery_email %}
-                            <strong>Note:</strong> A recovery password will be sent to this email for account recovery.
+                            A recovery password will be sent to this email for account recovery.
                             {% endif %}
                         </div>
                     </div>
