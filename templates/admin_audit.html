@@ -26,26 +26,26 @@
                         <label for="action_filter" class="form-label">Action</label>
                         <select class="form-select" id="action_filter" name="action">
                             <option value="">All Actions</option>
-                            <option value="login">Login</option>
-                            <option value="logout">Logout</option>
-                            <option value="failed_login">Failed Login</option>
-                            <option value="password_reset">Password Reset</option>
-                            <option value="create_secret">Create Secret</option>
-                            <option value="delete_secret">Delete Secret</option>
-                            <option value="admin_password_reset">Admin Password Reset</option>
+                            <option value="login" {% if request.args.get('action') == 'login' %}selected{% endif %}>Login</option>
+                            <option value="logout" {% if request.args.get('action') == 'logout' %}selected{% endif %}>Logout</option>
+                            <option value="failed_login" {% if request.args.get('action') == 'failed_login' %}selected{% endif %}>Failed Login</option>
+                            <option value="password_reset" {% if request.args.get('action') == 'password_reset' %}selected{% endif %}>Password Reset</option>
+                            <option value="create_secret" {% if request.args.get('action') == 'create_secret' %}selected{% endif %}>Create Secret</option>
+                            <option value="delete_secret" {% if request.args.get('action') == 'delete_secret' %}selected{% endif %}>Delete Secret</option>
+                            <option value="admin_password_reset" {% if request.args.get('action') == 'admin_password_reset' %}selected{% endif %}>Admin Password Reset</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label for="user_filter" class="form-label">User</label>
-                        <input type="text" class="form-control" id="user_filter" name="user" placeholder="Username">
+                        <input type="text" class="form-control" id="user_filter" name="user" placeholder="Username" value="{{ request.args.get('user', '') }}">
                     </div>
                     <div class="col-md-3">
                         <label for="date_from" class="form-label">From Date</label>
-                        <input type="date" class="form-control" id="date_from" name="date_from">
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
                     </div>
                     <div class="col-md-3">
                         <label for="date_to" class="form-label">To Date</label>
-                        <input type="date" class="form-control" id="date_to" name="date_to">
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-primary">
@@ -152,7 +152,7 @@
                     <ul class="pagination justify-content-center">
                         {% if logs.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.prev_num) }}">Previous</a>
+                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.prev_num, action=request.args.get('action', ''), user=request.args.get('user', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">Previous</a>
                         </li>
                         {% endif %}
                         
@@ -160,7 +160,7 @@
                             {% if page_num %}
                                 {% if page_num != logs.page %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('admin_audit', page=page_num) }}">{{ page_num }}</a>
+                                    <a class="page-link" href="{{ url_for('admin_audit', page=page_num, action=request.args.get('action', ''), user=request.args.get('user', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">{{ page_num }}</a>
                                 </li>
                                 {% else %}
                                 <li class="page-item active">
@@ -176,7 +176,7 @@
                         
                         {% if logs.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.next_num) }}">Next</a>
+                            <a class="page-link" href="{{ url_for('admin_audit', page=logs.next_num, action=request.args.get('action', ''), user=request.args.get('user', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">Next</a>
                         </li>
                         {% endif %}
                     </ul>

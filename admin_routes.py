@@ -280,12 +280,60 @@ def register_admin_routes(app):
                 except ValueError:
                     pass
             
-            # Get paginated logs
-            logs = AuditLog.objects(**query).order_by('-timestamp').paginate(
-                page=page, per_page=50, error_out=False
+            # Get paginated logs (manual pagination for MongoEngine)
+            per_page = 50
+            skip = (page - 1) * per_page
+            
+            # Get total count for pagination info
+            total_logs = AuditLog.objects(**query).count()
+            
+            # Get the logs for current page
+            logs = AuditLog.objects(**query).order_by('-timestamp').skip(skip).limit(per_page)
+            
+            # Calculate pagination info
+            has_prev = page > 1
+            has_next = skip + per_page < total_logs
+            prev_num = page - 1 if has_prev else None
+            next_num = page + 1 if has_next else None
+            total_pages = (total_logs + per_page - 1) // per_page  # Ceiling division
+            
+            # Create a pagination-like object for template compatibility
+            class PaginationInfo:
+                def __init__(self, items, page, per_page, total, has_prev, has_next, prev_num, next_num, pages):
+                    self.items = items
+                    self.page = page
+                    self.per_page = per_page
+                    self.total = total
+                    self.has_prev = has_prev
+                    self.has_next = has_next
+                    self.prev_num = prev_num
+                    self.next_num = next_num
+                    self.pages = pages
+                
+                def iter_pages(self, left_edge=2, left_current=2, right_current=3, right_edge=2):
+                    """Generate page numbers for pagination similar to Flask-SQLAlchemy"""
+                    last = self.pages
+                    for num in range(1, last + 1):
+                        if num <= left_edge or \
+                           (self.page - left_current - 1 < num < self.page + right_current) or \
+                           num > last - right_edge:
+                            yield num
+                        elif num == left_edge + 1 or num == last - right_edge:
+                            yield None
+            
+            logs_pagination = PaginationInfo(
+                items=list(logs),
+                page=page,
+                per_page=per_page,
+                total=total_logs,
+                has_prev=has_prev,
+                has_next=has_next,
+                prev_num=prev_num,
+                next_num=next_num,
+                pages=total_pages
             )
             
-            return render_template('admin_audit.html', logs=logs)
+            return render_template('admin_audit.html', logs=logs_pagination)
             
         except Exception as e:
             logger.error(f"Admin audit page error: {str(e)}")
@@ -325,6 +373,34 @@ def register_admin_routes(app):
             
         except Exception as e:
             logger.error(f"Get rotation requests error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/admin/api/rotation_request_stats', methods=['GET'])
+    @admin_required
+    def get_rotation_request_stats():
+        """Get statistics about all rotation requests"""
+        from models import RotationToken
+        
+        try:
+            total_requests = RotationToken.objects.count()
+            pending_count = RotationToken.objects(status='pending').count()
+            approved_count = RotationToken.objects(status='approved').count()
+            completed_count = RotationToken.objects(status='completed').count()
+            finalized_count = RotationToken.objects(status='finalized').count()
+            other_count = total_requests - (pending_count + approved_count + completed_count + finalized_count)
+            
+            return jsonify({
+                'success': True,
+                'total_requests': total_requests,
+                'pending': pending_count,
+                'approved': approved_count,
+                'completed': completed_count,
+                'finalized': finalized_count,
+                'other': other_count
+            })
+            
+        except Exception as e:
+            logger.error(f"Get rotation request stats error: {str(e)}")
             return jsonify({'error': str(e)}), 500
 
     @app.route('/admin/api/approve_rotation/<token_id>', methods=['POST'])
@@ -520,6 +596,56 @@ def register_admin_routes(app):
     def key_rotation_management():
         """Key rotation management page"""
         return render_template('admin_key_rotation.html')
+
+    @app.route('/admin/api/delete_all_rotation_requests', methods=['POST'])
+    @admin_required
+    def delete_all_rotation_requests():
+        """Delete all rotation requests for all users (dangerous operation)"""
+        from models import RotationToken
+        from werkzeug.security import check_password_hash
+        
+        try:
+            data = request.get_json()
+            admin_password = data.get('admin_password')
+            
+            if not admin_password:
+                return jsonify({'error': 'Admin password is required'}), 400
+            
+            # Verify admin password
+            if not check_password_hash(current_user.password_hash, admin_password):
+                return jsonify({'error': 'Invalid admin password'}), 401
+            
+            # Count total requests before deletion for reporting
+            total_requests = RotationToken.objects.count()
+            
+            if total_requests == 0:
+                return jsonify({
+                    'success': True,
+                    'deleted_count': 0,
+                    'message': 'No rotation requests found to delete'
+                })
+            
+            # Delete ALL rotation requests regardless of status
+            RotationToken.objects.delete()
+            
+            # Log this dangerous action
+            log_audit('admin_delete_all_rotation_requests', 'admin_action', current_user.id, {
+                'deleted_count': total_requests,
+                'admin_username': current_user.username,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+            logger.warning(f"Admin {current_user.username} deleted ALL {total_requests} rotation requests")
+            
+            return jsonify({
+                'success': True,
+                'deleted_count': total_requests,
+                'message': f'Successfully deleted {total_requests} rotation requests'
+            })
+            
+        except Exception as e:
+            logger.error(f"Delete all rotation requests error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
     @app.route('/admin/export_all_data')
     @admin_required

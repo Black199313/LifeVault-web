@@ -16,7 +16,12 @@
                     <!-- Pending Requests Section -->
                     <div class="row mb-4">
                         <div class="col-12">
-                            <h4><i class="fas fa-clock"></i> Pending Rotation Requests</h4>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4><i class="fas fa-clock"></i> Pending Rotation Requests</h4>
+                                <div id="request_stats" class="text-muted">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
                             <div id="pending_requests_container">
                                 <div class="text-center">
                                     <i class="fas fa-spinner fa-spin"></i> Loading requests...
@@ -65,6 +70,38 @@
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Dangerous Actions Section -->
+                                    <hr class="my-4">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h5 class="text-danger">
+                                                <i class="fas fa-exclamation-triangle"></i> Dangerous Actions
+                                            </h5>
+                                            <div class="alert alert-warning">
+                                                <strong>Warning:</strong> These actions cannot be undone and will affect all users.
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-danger">
+                                                <div class="card-body">
+                                                    <h6 class="card-title text-danger">Delete All Rotation Requests</h6>
+                                                    <p class="card-text">
+                                                        This will permanently delete ALL rotation requests for ALL users, 
+                                                        regardless of their status (pending, approved, completed, etc.).
+                                                    </p>
+                                                    <div class="mb-3">
+                                                        <label for="admin_password_delete_all" class="form-label">Your Admin Password</label>
+                                                        <input type="password" class="form-control" id="admin_password_delete_all" 
+                                                               placeholder="Enter your admin password to confirm">
+                                                    </div>
+                                                    <button type="button" class="btn btn-danger" onclick="deleteAllRotationRequests()">
+                                                        <i class="fas fa-trash-alt"></i> Delete All Requests
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -107,7 +144,29 @@ let currentTokenId = null;
 // Load pending requests on page load
 document.addEventListener('DOMContentLoaded', function() {
     refreshRequests();
+    loadRequestStats();
 });
+
+async function loadRequestStats() {
+    try {
+        const response = await fetch('/admin/api/rotation_request_stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('request_stats').innerHTML = `
+                <small>
+                    Total: ${data.total_requests} | 
+                    Pending: ${data.pending} | 
+                    Approved: ${data.approved} | 
+                    Completed: ${data.completed} | 
+                    Other: ${data.other}
+                </small>
+            `;
+        }
+    } catch (error) {
+        console.error('Failed to load request stats:', error);
+    }
+}
 
 async function refreshRequests() {
     try {
@@ -119,6 +178,9 @@ async function refreshRequests() {
         } else {
             showError('Failed to load requests: ' + (data.error || 'Unknown error'));
         }
+        
+        // Also refresh stats
+        loadRequestStats();
     } catch (error) {
         console.error('Failed to fetch requests:', error);
         showError('Failed to load requests. Please refresh the page.');
@@ -286,6 +348,80 @@ function showError(message) {
             <i class="fas fa-exclamation-triangle"></i> ${message}
         </div>
     `;
+}
+
+async function deleteAllRotationRequests() {
+    const adminPassword = document.getElementById('admin_password_delete_all').value;
+    
+    if (!adminPassword) {
+        alert('Please enter your admin password to confirm this action.');
+        return;
+    }
+    
+    // Get current stats to show in confirmation
+    let statsText = '';
+    try {
+        const statsResponse = await fetch('/admin/api/rotation_request_stats');
+        const statsData = await statsResponse.json();
+        if (statsData.success && statsData.total_requests > 0) {
+            statsText = `\nCurrent requests:\n- Total: ${statsData.total_requests}\n- Pending: ${statsData.pending}\n- Approved: ${statsData.approved}\n- Completed: ${statsData.completed}\n- Finalized: ${statsData.finalized}\n- Other: ${statsData.other}\n`;
+        } else if (statsData.total_requests === 0) {
+            alert('No rotation requests found to delete.');
+            return;
+        }
+    } catch (error) {
+        console.log('Could not load stats for confirmation');
+    }
+    
+    // Double confirmation for this dangerous action
+    const confirmMessage = `⚠️  DANGER: DELETE ALL ROTATION REQUESTS  ⚠️
+
+This will permanently delete ALL rotation requests for ALL users, including:
+- Pending requests
+- Approved requests  
+- Completed requests
+- Failed requests
+${statsText}
+This action CANNOT BE UNDONE.
+
+Are you absolutely sure you want to proceed?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Second confirmation
+    const secondConfirm = prompt(`Type "DELETE ALL REQUESTS" to confirm this destructive action:`);
+    if (secondConfirm !== "DELETE ALL REQUESTS") {
+        alert('Action cancelled. Exact text not entered.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/delete_all_rotation_requests', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                admin_password: adminPassword
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`Success: Deleted ${result.deleted_count} rotation requests.`);
+            // Clear the password field and refresh requests
+            document.getElementById('admin_password_delete_all').value = '';
+            refreshRequests();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Delete all requests failed:', error);
+        alert('Failed to delete requests. Please try again.');
+    }
 }
 </script>
 {% endblock %}
