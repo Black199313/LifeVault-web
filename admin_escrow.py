@@ -134,7 +134,6 @@ class AdminKeyEscrow:
         
         if isinstance(a_dek_data, str) and a_dek_data.startswith('{'):
             # New JSON format
-            import json
             parsed_data = json.loads(a_dek_data)
             encrypted_a_dek = parsed_data['encrypted']
         else:
@@ -181,7 +180,6 @@ class AdminKeyEscrow:
         """
         from werkzeug.security import check_password_hash, generate_password_hash
         from models import SecurityQuestion
-        import json
         
         # Validate old password
         if not check_password_hash(user.password_hash, old_password):

@@ -509,7 +509,6 @@ class CryptoManager:
             
             if isinstance(a_dek_data, str) and a_dek_data.startswith('{'):
                 # New JSON format
-                import json
                 parsed_data = json.loads(a_dek_data)
                 encrypted_a_dek = parsed_data['encrypted']
                 # Future: could use parsed_data['version'] for format handling
@@ -1248,30 +1247,39 @@ class AtomicKeyRotation:
     def _reencrypt_all_user_data(self, user, rotation_token, new_dek, current_password):
         """Re-encrypt all user data with new DEK"""
         from models import Secret, JournalEntry
+        import logging
+
+        logger = logging.getLogger(__name__)
         
         try:
             # Get old DEK for decryption
             old_dek = self._get_old_dek_from_backup(rotation_token, user, current_password)
             
+            logger.info(f"✅ old DEK {old_dek} ")
+            logger.info(f"✅ new DEK {new_dek} ")
             # Re-encrypt secrets
             secrets = Secret.objects(user=user)
             for secret in secrets:
                 # Decrypt with old DEK
+                logger.info(f"✅ Decrypting secret...")
                 decrypted_data = self.crypto_manager.decrypt_data(secret.encrypted_data, old_dek)
+                logger.info(f"✅ Decrypted secret: {decrypted_data}")
                 # Encrypt with new DEK
+                logger.info(f"✅ Encrypting with new key")
                 new_encrypted_data = self.crypto_manager.encrypt_data(decrypted_data, new_dek)
+                logger.info(f"✅ Encrypted data: {new_encrypted_data}")
                 secret.encrypted_data = new_encrypted_data
                 secret.save()
             
-            # Re-encrypt journal entries
-            journal_entries = JournalEntry.objects(user=user)
-            for entry in journal_entries:
-                # Decrypt with old DEK
-                decrypted_content = self.crypto_manager.decrypt_data(entry.content, old_dek)
-                # Encrypt with new DEK
-                new_encrypted_content = self.crypto_manager.encrypt_data(decrypted_content, new_dek)
-                entry.content = new_encrypted_content
-                entry.save()
+            # # Re-encrypt journal entries
+            # journal_entries = JournalEntry.objects(user=user)
+            # for entry in journal_entries:
+            #     # Decrypt with old DEK
+            #     decrypted_content = self.crypto_manager.decrypt_data(entry.content, old_dek)
+            #     # Encrypt with new DEK
+            #     new_encrypted_content = self.crypto_manager.encrypt_data(decrypted_content, new_dek)
+            #     entry.content = new_encrypted_content
+            #     entry.save()
                 
         except Exception as e:
             raise Exception(f"Data re-encryption failed: {str(e)}")

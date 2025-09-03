@@ -1284,7 +1284,6 @@ def export_data():
         })
         
         # Create JSON response with proper headers for download
-        import json
         from flask import Response
         
         json_data = json.dumps(export_data, indent=2, ensure_ascii=False)
