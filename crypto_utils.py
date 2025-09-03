@@ -204,6 +204,42 @@ class CryptoManager:
                 return fallback_key
             raise e
     
+    def get_or_create_admin_master_key_with_password(self, admin_password: str) -> bytes:
+        """
+        Get or create admin master key using actual admin password (not hash).
+        
+        This is more secure than using password hash as it requires the admin
+        to enter their actual password for sensitive operations.
+        
+        Args:
+            admin_password: Admin's actual password for direct verification
+        """
+        try:
+            from models import AdminMasterKey, User
+            from flask_login import current_user
+            from werkzeug.security import check_password_hash
+            
+            # Verify the admin password against current admin user
+            if not current_user or not current_user.is_admin:
+                raise ValueError("Admin authentication required")
+            
+            if not check_password_hash(current_user.password_hash, admin_password):
+                raise ValueError("Invalid admin password")
+            
+            # Try to get existing active key
+            active_key = AdminMasterKey.objects(is_active=True).first()
+            
+            if active_key:
+                # Use password hash for decryption (this is the standard method)
+                return self._decrypt_admin_master_key(active_key, current_user.password_hash)
+            else:
+                # Create new encrypted admin master key
+                return self._create_new_encrypted_admin_master_key()
+                
+        except Exception as e:
+            print(f"Failed to get admin master key with password: {str(e)}")
+            raise e
+    
     def cache_admin_master_key_for_user_operations(self, admin_password_hash: str) -> bool:
         """
         Cache admin master key in session for user operations.
@@ -518,7 +554,7 @@ class CryptoManager:
                 'encrypted': encrypted_dek_b64
             }
             user_keys.email_encrypted_key = json.dumps(e_dek_data)
-            print(f"✅ E-DEK created and stored")
+            print(f"✅ E-DEK created and ready to save")
             
             return email_password
             

@@ -566,15 +566,53 @@ def update_recovery():
                         try:
                             email_password = crypto_manager.setup_email_recovery(user_keys, password, recovery_email)
                             
-                            # Send email password to new recovery email
-                            from email_utils import email_service
-                            email_sent = email_service.send_recovery_code_email(user, email_password)
+                            # Save the E-DEK to database first
+                            user_keys.save()
+                            print(f"✅ E-DEK saved to database")
                             
-                            if email_sent:
-                                user_keys.save()
-                                flash(f'Recovery email updated and E-DEK password sent to {recovery_email}!', 'success')
+                            # Verify E-DEK was saved by reloading from database
+                            user_keys.reload()
+                            if user_keys.email_encrypted_key:
+                                print(f"✅ E-DEK verified in database: {len(user_keys.email_encrypted_key)} chars")
                             else:
-                                flash(f'Recovery email updated but failed to send password to {recovery_email}. Please contact support.', 'warning')
+                                print(f"❌ E-DEK not found in database after save!")
+                            
+                            # Send email password to new recovery email (with timeout protection)
+                            from email_utils import email_service
+                            
+                            print("🔄 Attempting to send recovery email...")
+                            try:
+                                # Set a shorter timeout for email to prevent hanging
+                                import threading
+                                import time
+                                
+                                email_result = [False]
+                                
+                                def send_email_thread():
+                                    try:
+                                        email_result[0] = email_service.send_recovery_code_email(user, email_password)
+                                    except:
+                                        pass  # Timeout will handle this
+                                
+                                # Try sending email with 5-second timeout
+                                thread = threading.Thread(target=send_email_thread)
+                                thread.daemon = True
+                                thread.start()
+                                thread.join(timeout=5)  # 5 second timeout
+                                
+                                if thread.is_alive():
+                                    print("⚠️ Email sending timed out after 5 seconds")
+                                    flash(f'Recovery email updated and E-DEK created! Email sending timed out - your recovery password is: {email_password}', 'warning')
+                                elif email_result[0]:
+                                    print("✅ Email sent successfully")
+                                    flash(f'Recovery email updated and E-DEK password sent to {recovery_email}!', 'success')
+                                else:
+                                    print("❌ Email sending failed")
+                                    flash(f'Recovery email updated and E-DEK created! Email failed - your recovery password is: {email_password}', 'warning')
+                                    
+                            except Exception as email_error:
+                                print(f"❌ Email error: {str(email_error)}")
+                                flash(f'Recovery email updated and E-DEK created! Email error - your recovery password is: {email_password}', 'warning')
                         except Exception as e:
                             flash(f'Recovery email updated but E-DEK setup failed: {str(e)}', 'warning')
                             logger.error(f"E-DEK setup failed during email update: {str(e)}")

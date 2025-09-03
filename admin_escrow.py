@@ -96,15 +96,20 @@ class AdminKeyEscrow:
         
         return user, temp_password
     
-    def admin_password_reset_with_escrow(self, user_id, new_password):
+    def admin_password_reset_with_escrow(self, user_id, new_password, admin_password):
         """
         Admin resets user password using admin master key.
         
         Process:
-        1. Admin recovers user's DEK using A-DEK (PERMANENT)
+        1. Admin recovers user's DEK using A-DEK with admin password verification
         2. Re-encrypt DEK with new password (creates new P-DEK)
         3. User can now log in with new password
         4. A-DEK, Q-DEK, R-DEK remain unchanged
+        
+        Args:
+            user_id: ID of user whose password is being reset
+            new_password: New password for the user
+            admin_password: Admin's actual password for verification
         """
         from models import User, UserKeys
         from werkzeug.security import generate_password_hash
@@ -116,15 +121,27 @@ class AdminKeyEscrow:
         if not user or not user_keys:
             raise ValueError("User or keys not found")
         
-        # Step 1: Recover DEK using A-DEK (requires admin authentication)
+        # Step 1: Recover DEK using A-DEK with admin password
         from flask_login import current_user
         if not current_user or not current_user.is_admin:
             raise ValueError("Admin authentication required for user recovery")
         
-        admin_master_key = crypto_manager.get_or_create_admin_master_key(
-            admin_password_hash=current_user.password_hash
-        )
-        dek_b64 = crypto_manager.decrypt_data(user_keys.admin_master_encrypted_key, admin_master_key)
+        # Get admin master key using the provided admin password
+        admin_master_key = crypto_manager.get_or_create_admin_master_key_with_password(admin_password)
+        
+        # Handle both old format (string) and new format (JSON) for A-DEK
+        a_dek_data = user_keys.admin_master_encrypted_key
+        
+        if isinstance(a_dek_data, str) and a_dek_data.startswith('{'):
+            # New JSON format
+            import json
+            parsed_data = json.loads(a_dek_data)
+            encrypted_a_dek = parsed_data['encrypted']
+        else:
+            # Old format (direct encrypted string)
+            encrypted_a_dek = a_dek_data
+        
+        dek_b64 = crypto_manager.decrypt_data(encrypted_a_dek, admin_master_key)
         user_dek = base64.urlsafe_b64decode(dek_b64.encode())
         
         # Step 2: Update user password

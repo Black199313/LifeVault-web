@@ -137,13 +137,24 @@ def register_admin_routes(app):
         """Reset a user's password (admin function)"""
         try:
             new_password = request.form.get('new_password', '').strip()
+            admin_password = request.form.get('admin_password', '').strip()
             
             if not new_password:
                 flash('New password is required!', 'error')
                 return redirect(url_for('admin_users'))
             
+            if not admin_password:
+                flash('Admin password is required for security verification!', 'error')
+                return redirect(url_for('admin_users'))
+            
             if len(new_password) < 8:
                 flash('Password must be at least 8 characters long!', 'error')
+                return redirect(url_for('admin_users'))
+            
+            # Verify admin password
+            from werkzeug.security import check_password_hash
+            if not check_password_hash(current_user.password_hash, admin_password):
+                flash('Invalid admin password!', 'error')
                 return redirect(url_for('admin_users'))
             
             # Find user
@@ -152,8 +163,8 @@ def register_admin_routes(app):
                 flash('User not found!', 'error')
                 return redirect(url_for('admin_users'))
             
-            # Use admin escrow system for password reset
-            success = admin_escrow.admin_password_reset_with_escrow(user_id, new_password)
+            # Use admin escrow system for password reset with admin password
+            success = admin_escrow.admin_password_reset_with_escrow(user_id, new_password, admin_password)
             
             if success:
                 log_audit('admin_password_reset', 'user', user.id, {

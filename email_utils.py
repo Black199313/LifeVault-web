@@ -8,17 +8,45 @@ class EmailService:
         self.logger = logging.getLogger(__name__)
     
     def send_email(self, to_email, subject, template, **kwargs):
-        """Send email using Flask-Mail"""
+        """Send email using Flask-Mail with timeout protection"""
         try:
-            msg = Message(
-                subject=subject,
-                recipients=[to_email],
-                html=template,
-                sender=current_app.config['MAIL_DEFAULT_SENDER']
-            )
-            mail.send(msg)
-            self.logger.info(f"Email sent successfully to {to_email}")
-            return True
+            import signal
+            import threading
+            
+            # Set up timeout for email sending
+            email_result = [False]  # Use list to modify in nested function
+            email_error = [None]
+            
+            def send_email_thread():
+                try:
+                    msg = Message(
+                        subject=subject,
+                        recipients=[to_email],
+                        html=template,
+                        sender=current_app.config['MAIL_DEFAULT_SENDER']
+                    )
+                    mail.send(msg)
+                    email_result[0] = True
+                    self.logger.info(f"Email sent successfully to {to_email}")
+                except Exception as e:
+                    email_error[0] = e
+                    self.logger.error(f"Failed to send email to {to_email}: {str(e)}")
+            
+            # Start email sending in a separate thread with timeout
+            thread = threading.Thread(target=send_email_thread)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout=10)  # 10 second timeout
+            
+            if thread.is_alive():
+                self.logger.error(f"Email sending timed out after 10 seconds to {to_email}")
+                return False
+            
+            if email_error[0]:
+                raise email_error[0]
+                
+            return email_result[0]
+            
         except Exception as e:
             self.logger.error(f"Failed to send email to {to_email}: {str(e)}")
             return False

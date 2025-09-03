@@ -178,6 +178,18 @@
                         <label for="confirm_new_password" class="form-label">Confirm New Password *</label>
                         <input type="password" class="form-control" id="confirm_new_password" required>
                     </div>
+                    
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Admin Verification Required</h6>
+                        <p class="mb-0">Enter your admin password to authorize this password reset operation.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="admin_password" class="form-label">Your Admin Password *</label>
+                        <input type="password" class="form-control" id="admin_password" name="admin_password" required>
+                        <div class="form-text">Required for security verification</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -202,16 +214,28 @@ resetPasswordModal.addEventListener('show.bs.modal', function (event) {
     
     document.getElementById('resetUsername').textContent = username;
     document.getElementById('resetPasswordForm').action = `/admin/users/${userId}/reset_password`;
+    
+    // Clear form fields for security
+    document.getElementById('new_password').value = '';
+    document.getElementById('confirm_new_password').value = '';
+    document.getElementById('admin_password').value = '';
 });
 
-// Validate password confirmation
+// Validate password confirmation and admin password
 document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
     const password = document.getElementById('new_password').value;
     const confirmPassword = document.getElementById('confirm_new_password').value;
+    const adminPassword = document.getElementById('admin_password').value;
     
     if (password !== confirmPassword) {
         e.preventDefault();
         alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (!adminPassword) {
+        e.preventDefault();
+        alert('Admin password is required for security verification!');
         return false;
     }
 });
