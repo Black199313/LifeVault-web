@@ -21,8 +21,8 @@ def test_email():
         print(f"MAIL_USE_TLS: {app.config.get('MAIL_USE_TLS')}")
         print()
         
-        # Test with sachinprabhu.devops@gmail.com
-        user = TestUser('sachinprabhu.devops@gmail.com')
+        # Test with sachinprabhu@gmail.com
+        user = TestUser('sachinprabhu@gmail.com')
         
         print(f"Testing email to: {user.recovery_email}")
         
