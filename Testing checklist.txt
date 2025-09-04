@@ -1,0 +1,36 @@
+1. Admin creation. --Done
+2. User creation. --Done
+3. User first time login. --Done
+4. Add secrets. --Done
+5. Edit secrets. --Done
+6. View secrets. --Done
+7. Copy secrets. --Done
+8. Delete secrets. --Done
+9. User password change. --Done
+10. Set Email. --Done, email also sent.
+11. Set security questions. --Done
+12. Set recovery phrase. --Done
+13. Q-DEK recovery. --Done
+14. Q-DEK update and recovery. --Done
+15. R-DEK recovery. --Done
+16. R-DEK update and recovery. --Done
+17. E-DEK recovery. --Done
+18. E-DEK update and recovery. --Done
+19. User data backup. --Done
+20. Admin data backup. --Done
+21. A-DEK recovery. --Done
+22. Journal entry. --Done
+23. Journal view. --Done
+24. Journal update. --Done
+25. Journal delete. --Done
+26. App close logout. --Done
+27. Browser close logout. --Done
+28. Browser tab close logout. --Done
+29. Logout. --Done
+30. Key rotation. --Done
+31. Q-DEK recovery and secret verification after key rotation. --Done
+32. A-DEK recovery and secret verification after key rotation. --Done
+33. R-DEK recovery and secret verification after key rotation. --Done
+34. E-DEK recovery and secret verification after key rotation. --Done
+35. Change password after key rotation. --Done
+36. Delete all rotation tokens --Done
