@@ -43,8 +43,8 @@ tmp/
 *.backup
 
 # Test files (optional - you might want to keep these)
-test_*.py
-debug_*.py
+# test_*.py
+# debug_*.py
 
 # Sensitive configuration
 config.ini
